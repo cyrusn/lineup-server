@@ -1,0 +1,55 @@
+package cmd
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+
+	"github.com/cyrusn/lineup-system/auth"
+	"github.com/spf13/cobra"
+)
+
+var importCmd = &cobra.Command{
+	Use:   "import",
+	Short: "import user in database",
+	Run: func(cmd *cobra.Command, args []string) {
+		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+			log.Fatal(dbPath, " doesn't exist")
+		}
+
+		file, err := ioutil.ReadFile(userJSONPath)
+		if err != nil {
+			fmt.Printf("File error: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("Parsing:", userJSONPath)
+
+		var credentials []auth.Credential
+
+		if err := json.Unmarshal(file, &credentials); err != nil {
+			fmt.Printf("File error: %v\n", err)
+			os.Exit(1)
+		}
+
+		sqldb, err := sql.Open("sqlite3", dbPath)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		db := &auth.DB{sqldb}
+
+		for _, c := range credentials {
+			err := db.Insert(c.UserAlias, c.Password)
+			if err != nil {
+				fmt.Printf("Import error: %v\n", err)
+				os.Exit(1)
+			}
+		}
+		fmt.Println("users imported")
+	},
+}
