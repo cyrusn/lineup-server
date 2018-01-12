@@ -11,16 +11,17 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Parents ...
-type Parents struct {
-	ClassNo   int
-	Arrival   time.Time
-	Moving    bool
-	Completed bool
-	Priority  int
+// Schedule ...
+type Schedule struct {
+	ClassNo    int       `json:"classno"`
+	ArrivedAt  time.Time `json:"arrivedAt"`
+	Order      int       `json:"order"`
+	IsNotified bool      `json:"isNotified"`
+	IsMeeting  bool      `json:"isMeeting"`
+	IsComplete bool      `json:"isComplete"`
 }
 
-var mapParents = make(map[string][]*Parents)
+var mapSchedule = make(map[string][]*Schedule)
 
 // Route ...
 type Route struct {
@@ -31,34 +32,39 @@ type Route struct {
 
 var routes = []Route{
 	Route{
-		Path:    "/arrival",
+		Path:    "/schedule",
 		Methods: []string{"GET"},
-		Handler: getArrival,
+		Handler: getSchedule,
 	},
 	Route{
-		Path:    "/arrival/{classcode}/{classno}",
+		Path:    "/schedule/{classcode}/{classno}",
 		Methods: []string{"POST"},
-		Handler: newArrival,
+		Handler: addSchedule,
 	},
 	Route{
-		Path:    "/arrival/{classcode}/{classno}",
+		Path:    "/schedule/{classcode}/{classno}",
 		Methods: []string{"DELETE"},
-		Handler: removeArrival,
+		Handler: removeSchedule,
 	},
 	Route{
-		Path:    "/arrival/{classcode}/{classno}/priority/{priority}",
+		Path:    "/schedule/{classcode}/{classno}/order/{order}",
 		Methods: []string{"PUT"},
-		Handler: updateArrivalPriority,
+		Handler: updateOrder,
 	},
 	Route{
-		Path:    "/arrival/{classcode}/{classno}/complete",
+		Path:    "/schedule/{classcode}/{classno}/is-complete",
 		Methods: []string{"PUT"},
-		Handler: toggleComplete,
+		Handler: toggleIsComplete,
 	},
 	Route{
-		Path:    "/arrival/{classcode}/{classno}/moving",
+		Path:    "/schedule/{classcode}/{classno}/is-notified",
 		Methods: []string{"PUT"},
-		Handler: toggleMoving,
+		Handler: toggleIsNotified,
+	},
+	Route{
+		Path:    "/schedule/{classcode}/{classno}/is-meeting",
+		Methods: []string{"PUT"},
+		Handler: toggleIsMeeting,
 	},
 }
 
@@ -86,22 +92,20 @@ func main() {
 	http.ListenAndServe(location, helper.Logger(r))
 }
 
-func getArrival(w http.ResponseWriter, r *http.Request) {
+func getSchedule(w http.ResponseWriter, r *http.Request) {
 	errCode := http.StatusBadRequest
-	helper.PrintJSON(w, mapParents, errCode)
+	helper.PrintJSON(w, mapSchedule, errCode)
 }
 
-func newArrival(w http.ResponseWriter, r *http.Request) {
+func addSchedule(w http.ResponseWriter, r *http.Request) {
 	errCode := http.StatusBadRequest
 
-	classCode := mux.Vars(r)["classcode"]
-	classNoString := mux.Vars(r)["classno"]
-	classNo, err := strconv.Atoi(classNoString)
+	classCode, classNo, err := ReadClassCodeAndClassNo(r)
 	if err != nil {
 		helper.PrintError(w, err, errCode)
 	}
 
-	for _, p := range mapParents[classCode] {
+	for _, p := range mapSchedule[classCode] {
 		if p.ClassNo == classNo {
 			message := fmt.Sprintf("%s%d already existed", classCode, classNo)
 			w.Write([]byte(message))
@@ -109,66 +113,63 @@ func newArrival(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mapParents[classCode] = append(mapParents[classCode], &Parents{
-		ClassNo:   classNo,
-		Arrival:   time.Now(),
-		Priority:  0,
-		Moving:    false,
-		Completed: false,
+	mapSchedule[classCode] = append(mapSchedule[classCode], &Schedule{
+		ClassNo:    classNo,
+		ArrivedAt:  time.Now(),
+		Order:      0,
+		IsNotified: false,
+		IsMeeting:  false,
+		IsComplete: false,
 	})
+
 	message := fmt.Sprintf("%s%d added", classCode, classNo)
 	w.Write([]byte(message))
 }
 
-func removeArrival(w http.ResponseWriter, r *http.Request) {
+func removeSchedule(w http.ResponseWriter, r *http.Request) {
 	errCode := http.StatusBadRequest
-
-	classCode := mux.Vars(r)["classcode"]
-	classNoString := mux.Vars(r)["classno"]
-	classNo, err := strconv.Atoi(classNoString)
+	classCode, classNo, err := ReadClassCodeAndClassNo(r)
 	if err != nil {
 		helper.PrintError(w, err, errCode)
 	}
 
-	var newParentList = []*Parents{}
+	var newList = []*Schedule{}
 
-	for _, p := range mapParents[classCode] {
+	for _, p := range mapSchedule[classCode] {
 		if p.ClassNo == classNo {
 			continue
 		} else {
-			newParentList = append(newParentList, p)
+			newList = append(newList, p)
 		}
 	}
-	if len(mapParents[classCode]) == len(newParentList) {
+	if len(mapSchedule[classCode]) == len(newList) {
 		message := fmt.Sprintf("%s%d not found", classCode, classNo)
 		w.Write([]byte(message))
 		return
 	}
 
-	mapParents[classCode] = newParentList
+	mapSchedule[classCode] = newList
 	message := fmt.Sprintf("%s%d removed", classCode, classNo)
 	w.Write([]byte(message))
 }
 
-func updateArrivalPriority(w http.ResponseWriter, r *http.Request) {
+func updateOrder(w http.ResponseWriter, r *http.Request) {
 	errCode := http.StatusBadRequest
-
-	classCode := mux.Vars(r)["classcode"]
-	classNoString := mux.Vars(r)["classno"]
-	priorityString := mux.Vars(r)["priority"]
-
-	classNo, err := strconv.Atoi(classNoString)
+	orderString := mux.Vars(r)["order"]
+	order, err := strconv.Atoi(orderString)
 	if err != nil {
 		helper.PrintError(w, err, errCode)
 	}
-	priority, err := strconv.Atoi(priorityString)
+
+	classCode, classNo, err := ReadClassCodeAndClassNo(r)
 	if err != nil {
 		helper.PrintError(w, err, errCode)
 	}
-	for _, p := range mapParents[classCode] {
+
+	for _, p := range mapSchedule[classCode] {
 		if p.ClassNo == classNo {
-			p.Priority = priority
-			message := fmt.Sprintf("%s%d updated Priority to %d", classCode, classNo, priority)
+			p.Order = order
+			message := fmt.Sprintf("%s%d updated Priority to %d", classCode, classNo, order)
 			w.Write([]byte(message))
 			return
 		}
@@ -178,20 +179,18 @@ func updateArrivalPriority(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(message))
 }
 
-func toggleComplete(w http.ResponseWriter, r *http.Request) {
+func toggleIsComplete(w http.ResponseWriter, r *http.Request) {
 	errCode := http.StatusBadRequest
-	classCode := mux.Vars(r)["classcode"]
-	classNoString := mux.Vars(r)["classno"]
-	classNo, err := strconv.Atoi(classNoString)
+	classCode, classNo, err := ReadClassCodeAndClassNo(r)
 	if err != nil {
 		helper.PrintError(w, err, errCode)
 	}
 
-	for _, p := range mapParents[classCode] {
+	for _, p := range mapSchedule[classCode] {
 		if p.ClassNo == classNo {
-			p.Completed = !p.Completed
+			p.IsComplete = !p.IsComplete
 
-			message := fmt.Sprintf("%s%d toggled completed to %v", classCode, classNo, p.Completed)
+			message := fmt.Sprintf("%s%d toggled completed to %v", classCode, classNo, p.IsComplete)
 			w.Write([]byte(message))
 			return
 		}
@@ -200,20 +199,20 @@ func toggleComplete(w http.ResponseWriter, r *http.Request) {
 	message := fmt.Sprintf("%s%d not found", classCode, classNo)
 	w.Write([]byte(message))
 }
-func toggleMoving(w http.ResponseWriter, r *http.Request) {
+
+func toggleIsNotified(w http.ResponseWriter, r *http.Request) {
 	errCode := http.StatusBadRequest
-	classCode := mux.Vars(r)["classcode"]
-	classNoString := mux.Vars(r)["classno"]
-	classNo, err := strconv.Atoi(classNoString)
+
+	classCode, classNo, err := ReadClassCodeAndClassNo(r)
 	if err != nil {
 		helper.PrintError(w, err, errCode)
 	}
 
-	for _, p := range mapParents[classCode] {
+	for _, p := range mapSchedule[classCode] {
 		if p.ClassNo == classNo {
-			p.Moving = !p.Moving
+			p.IsNotified = !p.IsNotified
 
-			message := fmt.Sprintf("%s%d toggled Moving to %v", classCode, classNo, p.Moving)
+			message := fmt.Sprintf("%s%d toggled Moving to %v", classCode, classNo, p.IsNotified)
 			w.Write([]byte(message))
 			return
 		}
@@ -221,4 +220,38 @@ func toggleMoving(w http.ResponseWriter, r *http.Request) {
 
 	message := fmt.Sprintf("%s%d not found", classCode, classNo)
 	w.Write([]byte(message))
+}
+
+func toggleIsMeeting(w http.ResponseWriter, r *http.Request) {
+	errCode := http.StatusBadRequest
+
+	classCode, classNo, err := ReadClassCodeAndClassNo(r)
+	if err != nil {
+		helper.PrintError(w, err, errCode)
+	}
+
+	for _, p := range mapSchedule[classCode] {
+		if p.ClassNo == classNo {
+			p.IsMeeting = !p.IsMeeting
+
+			message := fmt.Sprintf("%s%d toggled Moving to %v", classCode, classNo, p.IsNotified)
+			w.Write([]byte(message))
+			return
+		}
+	}
+
+	message := fmt.Sprintf("%s%d not found", classCode, classNo)
+	w.Write([]byte(message))
+}
+
+// ReadClassCodeAndClassNo read classcode and classno in mux.Vars
+func ReadClassCodeAndClassNo(r *http.Request) (string, int, error) {
+	classCode := mux.Vars(r)["classcode"]
+	classNoString := mux.Vars(r)["classno"]
+	classNo, err := strconv.Atoi(classNoString)
+	if err != nil {
+		return "", 0, err
+	}
+
+	return classCode, classNo, nil
 }
