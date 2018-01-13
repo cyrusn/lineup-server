@@ -3,12 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	helper "github.com/cyrusn/goHTTPHelper"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 // Schedule ...
@@ -22,6 +24,11 @@ type Schedule struct {
 }
 
 var mapSchedule = make(map[string][]*Schedule)
+var mapClient = make(map[*websocket.Conn]bool)
+var boardcast = make(chan map[string][]*Schedule)
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
 
 // Route ...
 type Route struct {
@@ -74,8 +81,10 @@ func init() {
 	flag.StringVar(&port, "port", ":5000", "Port value")
 	flag.Parse()
 }
+
 func main() {
 	r := mux.NewRouter()
+	r.HandleFunc("/ws", handleConnections)
 
 	for _, route := range routes {
 		r.
@@ -124,6 +133,8 @@ func addSchedule(w http.ResponseWriter, r *http.Request) {
 
 	message := fmt.Sprintf("%s%d added", classCode, classNo)
 	w.Write([]byte(message))
+
+	go handleBoardcast()
 }
 
 func removeSchedule(w http.ResponseWriter, r *http.Request) {
@@ -151,6 +162,8 @@ func removeSchedule(w http.ResponseWriter, r *http.Request) {
 	mapSchedule[classCode] = newList
 	message := fmt.Sprintf("%s%d removed", classCode, classNo)
 	w.Write([]byte(message))
+
+	go handleBoardcast()
 }
 
 func updateOrder(w http.ResponseWriter, r *http.Request) {
@@ -169,14 +182,16 @@ func updateOrder(w http.ResponseWriter, r *http.Request) {
 	for _, p := range mapSchedule[classCode] {
 		if p.ClassNo == classNo {
 			p.Order = order
-			message := fmt.Sprintf("%s%d updated Priority to %d", classCode, classNo, order)
+			message := fmt.Sprintf("%s%d updated order to %d", classCode, classNo, order)
 			w.Write([]byte(message))
+			go handleBoardcast()
 			return
 		}
 	}
 
 	message := fmt.Sprintf("%s%d not found", classCode, classNo)
 	w.Write([]byte(message))
+
 }
 
 func toggleIsComplete(w http.ResponseWriter, r *http.Request) {
@@ -190,6 +205,7 @@ func toggleIsComplete(w http.ResponseWriter, r *http.Request) {
 		if p.ClassNo == classNo {
 			p.IsComplete = !p.IsComplete
 
+			go handleBoardcast()
 			message := fmt.Sprintf("%s%d toggled completed to %v", classCode, classNo, p.IsComplete)
 			w.Write([]byte(message))
 			return
@@ -198,6 +214,7 @@ func toggleIsComplete(w http.ResponseWriter, r *http.Request) {
 
 	message := fmt.Sprintf("%s%d not found", classCode, classNo)
 	w.Write([]byte(message))
+
 }
 
 func toggleIsNotified(w http.ResponseWriter, r *http.Request) {
@@ -212,7 +229,8 @@ func toggleIsNotified(w http.ResponseWriter, r *http.Request) {
 		if p.ClassNo == classNo {
 			p.IsNotified = !p.IsNotified
 
-			message := fmt.Sprintf("%s%d toggled Moving to %v", classCode, classNo, p.IsNotified)
+			go handleBoardcast()
+			message := fmt.Sprintf("%s%d toggled isNotified to %v", classCode, classNo, p.IsNotified)
 			w.Write([]byte(message))
 			return
 		}
@@ -220,6 +238,7 @@ func toggleIsNotified(w http.ResponseWriter, r *http.Request) {
 
 	message := fmt.Sprintf("%s%d not found", classCode, classNo)
 	w.Write([]byte(message))
+
 }
 
 func toggleIsMeeting(w http.ResponseWriter, r *http.Request) {
@@ -234,14 +253,16 @@ func toggleIsMeeting(w http.ResponseWriter, r *http.Request) {
 		if p.ClassNo == classNo {
 			p.IsMeeting = !p.IsMeeting
 
-			message := fmt.Sprintf("%s%d toggled Moving to %v", classCode, classNo, p.IsNotified)
+			message := fmt.Sprintf("%s%d toggled isMeeting to %v", classCode, classNo, p.IsNotified)
 			w.Write([]byte(message))
+			go handleBoardcast()
 			return
 		}
 	}
 
 	message := fmt.Sprintf("%s%d not found", classCode, classNo)
 	w.Write([]byte(message))
+
 }
 
 // ReadClassCodeAndClassNo read classcode and classno in mux.Vars
@@ -254,4 +275,29 @@ func ReadClassCodeAndClassNo(r *http.Request) (string, int, error) {
 	}
 
 	return classCode, classNo, nil
+}
+
+func handleConnections(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("error: %v", err)
+	}
+	defer ws.Close()
+	mapClient[ws] = true
+
+	for {
+		boardcast <- mapSchedule
+	}
+}
+
+func handleBoardcast() {
+	schedule := <-boardcast
+	for client := range mapClient {
+		err := client.WriteJSON(schedule)
+		if err != nil {
+			log.Printf("error: %v", err)
+			client.Close()
+			delete(mapClient, client)
+		}
+	}
 }

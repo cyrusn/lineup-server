@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"sync"
 	"testing"
-	"time"
 )
 
 func TestMain(t *testing.T) {
-	t.Run("add", addStudent)
-	for {
-		time.Sleep(time.Duration(time.Second * 5))
-		t.Run("test", testGet)
-	}
+	// t.Run("add", addStudent)
+	// for {
+	// 	time.Sleep(time.Duration(time.Second * 5))
+	// 	t.Run("test", testGet)
+	// }
 }
 
 func testGet(t *testing.T) {
