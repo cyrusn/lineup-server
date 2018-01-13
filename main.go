@@ -102,8 +102,8 @@ func main() {
 }
 
 func getSchedule(w http.ResponseWriter, r *http.Request) {
-	errCode := http.StatusBadRequest
-	helper.PrintJSON(w, mapSchedule, errCode)
+	w.Write([]byte("boardcast"))
+	go handleBoardcast()
 }
 
 func addSchedule(w http.ResponseWriter, r *http.Request) {
