@@ -7,34 +7,44 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var schedules = make(map[string][]*Schedule)
-var clients = make(map[*websocket.Conn]bool)
-var boardcast = make(chan map[string][]*Schedule)
+// Hub ...
+type Hub struct {
+	Clients   map[*websocket.Conn]bool
+	Schedules chan map[string][]*Schedule
+}
+
+func newHub() *Hub {
+	return &Hub{
+		Clients:   make(map[*websocket.Conn]bool),
+		Schedules: make(chan map[string][]*Schedule),
+	}
+}
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func handleConnections(w http.ResponseWriter, r *http.Request) {
+func (hub *Hub) handleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("error: %v", err)
 	}
 	defer ws.Close()
-	clients[ws] = true
+	hub.Clients[ws] = true
 
 	for {
-		boardcast <- schedules
+		hub.Schedules <- schedules
 	}
 }
 
-func handleBoardcast() {
-	schedule := <-boardcast
-	for client := range clients {
+func (hub *Hub) boardcast() {
+	schedule := <-hub.Schedules
+	for client := range hub.Clients {
 		err := client.WriteJSON(schedule)
 		if err != nil {
 			log.Printf("error: %v", err)
 			client.Close()
-			delete(clients, client)
+			delete(hub.Clients, client)
 		}
 	}
 }
