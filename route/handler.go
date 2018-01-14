@@ -127,7 +127,7 @@ func toggleIsMeetingHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Reques
 			return
 		}
 
-		if err := hub.MapSchedules.ToggleIsIsMeeting(classCode, classNo); err != nil {
+		if err := hub.MapSchedules.ToggleIsMeeting(classCode, classNo); err != nil {
 			errCode := http.StatusNotFound
 			helper.PrintError(w, err, errCode)
 			return

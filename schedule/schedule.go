@@ -74,8 +74,8 @@ func (s Schedules) ToggleIsNotified(classCode string, classNo int) error {
 	return nil
 }
 
-// ToggleIsIsMeeting toggle IsMeeting
-func (s Schedules) ToggleIsIsMeeting(classCode string, classNo int) error {
+// ToggleIsMeeting toggle IsMeeting
+func (s Schedules) ToggleIsMeeting(classCode string, classNo int) error {
 	i, p := s.FindSchedule(classCode, classNo)
 	if i == -1 {
 		return errors.New("schedule not found")
