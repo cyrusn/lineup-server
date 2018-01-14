@@ -1,50 +1,55 @@
-package main
+package route
 
-import "net/http"
+import (
+	"net/http"
 
-// Route ...
+	"github.com/cyrusn/lineup-system/hub"
+)
+
+// Route store information of route
 type Route struct {
 	Path    string
 	Methods []string
 	Handler func(http.ResponseWriter, *http.Request)
 }
 
-func (hub *Hub) routes() []Route {
+// Routes is slice of route
+func Routes(hub *hub.Hub) []Route {
 	return []Route{
 		Route{
 			Path:    "/schedule",
 			Methods: []string{"GET"},
-			Handler: hub.getScheduleHandler,
+			Handler: getScheduleHandler(hub),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}",
 			Methods: []string{"POST"},
-			Handler: hub.addScheduleHandler,
+			Handler: addScheduleHandler(hub),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}",
 			Methods: []string{"DELETE"},
-			Handler: hub.removeScheduleHandler,
+			Handler: removeScheduleHandler(hub),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/order/{order}",
 			Methods: []string{"PUT"},
-			Handler: hub.updateOrderHandler,
+			Handler: updateOrderHandler(hub),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-complete",
 			Methods: []string{"PUT"},
-			Handler: hub.toggleIsCompleteHandler,
+			Handler: toggleIsCompleteHandler(hub),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-notified",
 			Methods: []string{"PUT"},
-			Handler: hub.toggleIsNotifiedHandler,
+			Handler: toggleIsNotifiedHandler(hub),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-meeting",
 			Methods: []string{"PUT"},
-			Handler: hub.toggleIsMeetingHandler,
+			Handler: toggleIsMeetingHandler(hub),
 		},
 	}
 }
