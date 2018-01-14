@@ -25,7 +25,7 @@ func init() {
 func main() {
 	r := mux.NewRouter()
 	h := hub.New()
-	r.HandleFunc("/ws", h.HandleConnections)
+	r.HandleFunc("/ws", h.HandleScheduleConnections)
 
 	for _, ro := range route.Routes(h) {
 		r.

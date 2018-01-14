@@ -10,30 +10,30 @@ import (
 
 // Hub is a hub store everything needs for create a websocket server
 type Hub struct {
-	MapSchedules schedule.Schedules
-	Schedules    chan schedule.Schedules
-	Clients      map[*websocket.Conn]bool
-	Upgrader     websocket.Upgrader
+	MapSchedules     schedule.Schedules
+	Schedules        chan schedule.Schedules
+	SchedulesClients map[*websocket.Conn]bool
+	Upgrader         websocket.Upgrader
 }
 
 // New create a new hub
 func New() *Hub {
 	return &Hub{
-		MapSchedules: schedule.New(),
-		Clients:      make(map[*websocket.Conn]bool),
-		Schedules:    make(chan schedule.Schedules),
-		Upgrader:     websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
+		MapSchedules:     schedule.New(),
+		SchedulesClients: make(map[*websocket.Conn]bool),
+		Schedules:        make(chan schedule.Schedules),
+		Upgrader:         websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 	}
 }
 
-// HandleConnections is a handler for connection
-func (hub *Hub) HandleConnections(w http.ResponseWriter, r *http.Request) {
+// HandleScheduleConnections is a handler for connection
+func (hub *Hub) HandleScheduleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := hub.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("error: %v", err)
 	}
 	defer ws.Close()
-	hub.Clients[ws] = true
+	hub.SchedulesClients[ws] = true
 
 	for {
 		hub.Schedules <- hub.MapSchedules
@@ -42,12 +42,12 @@ func (hub *Hub) HandleConnections(w http.ResponseWriter, r *http.Request) {
 
 // BoardcastSchedule boardcast MapSchedules to all clients
 func (hub *Hub) BoardcastSchedule() {
-	for client := range hub.Clients {
+	for client := range hub.SchedulesClients {
 		err := client.WriteJSON(<-hub.Schedules)
 		if err != nil {
 			log.Printf("error: %v", err)
 			client.Close()
-			delete(hub.Clients, client)
+			delete(hub.SchedulesClients, client)
 		}
 	}
 }
