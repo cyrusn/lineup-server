@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	helper "github.com/cyrusn/goHTTPHelper"
+	"github.com/cyrusn/goHTTPHelper"
 	"github.com/gorilla/mux"
 )
 

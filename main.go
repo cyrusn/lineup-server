@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	helper "github.com/cyrusn/goHTTPHelper"
+	"github.com/cyrusn/goHTTPHelper"
 	"github.com/cyrusn/lineup-system/hub"
 	"github.com/cyrusn/lineup-system/route"
 	"github.com/gorilla/mux"
@@ -25,7 +25,10 @@ func init() {
 func main() {
 	r := mux.NewRouter()
 	h := hub.New()
-	r.HandleFunc("/ws", h.HandleScheduleConnections)
+
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		h.ServeWS(w, r)
+	})
 
 	for _, ro := range route.Routes(h) {
 		r.

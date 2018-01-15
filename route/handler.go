@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	helper "github.com/cyrusn/goHTTPHelper"
+	"github.com/cyrusn/goHTTPHelper"
 	"github.com/cyrusn/lineup-system/hub"
 )
 
