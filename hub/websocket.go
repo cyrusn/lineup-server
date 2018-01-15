@@ -10,8 +10,8 @@ import (
 
 // Hub is a hub store everything needs for create a websocket server
 type Hub struct {
-	MapSchedules     schedule.Schedules
-	Schedules        chan schedule.Schedules
+	MapSchedules     schedule.MapSchedules
+	ChSchedules      chan schedule.MapSchedules
 	SchedulesClients map[*websocket.Conn]bool
 	Upgrader         websocket.Upgrader
 }
@@ -21,7 +21,7 @@ func New() *Hub {
 	return &Hub{
 		MapSchedules:     schedule.New(),
 		SchedulesClients: make(map[*websocket.Conn]bool),
-		Schedules:        make(chan schedule.Schedules),
+		ChSchedules:      make(chan schedule.MapSchedules),
 		Upgrader:         websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }},
 	}
 }
@@ -36,14 +36,14 @@ func (hub *Hub) HandleScheduleConnections(w http.ResponseWriter, r *http.Request
 	hub.SchedulesClients[ws] = true
 
 	for {
-		hub.Schedules <- hub.MapSchedules
+		hub.ChSchedules <- hub.MapSchedules
 	}
 }
 
 // BoardcastSchedule boardcast MapSchedules to all clients
 func (hub *Hub) BoardcastSchedule() {
 	for client := range hub.SchedulesClients {
-		err := client.WriteJSON(<-hub.Schedules)
+		err := client.WriteJSON(<-hub.ChSchedules)
 		if err != nil {
 			log.Printf("error: %v", err)
 			client.Close()

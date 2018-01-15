@@ -16,22 +16,23 @@ type Schedule struct {
 	IsComplete bool      `json:"isComplete"`
 }
 
-// Schedules is a slice of Schedule
-type Schedules map[string][]*Schedule
+// MapSchedules is a slice of Schedule
+type MapSchedules map[string][]*Schedule
 
-// New create new Schedules
-func New() Schedules {
+// New create new MapSchedules
+func New() MapSchedules {
 	return make(map[string][]*Schedule)
 }
 
 // AppendSchedule append a new schedule to schedules
-func (s Schedules) AppendSchedule(classCode string, classNo int) error {
-	_, d := s.FindSchedule(classCode, classNo)
-	if d != nil {
+func (m MapSchedules) AppendSchedule(classCode string, classNo int) error {
+	_, s := m.FindSchedule(classCode, classNo)
+	if s != nil {
 		return errors.New("schedule is already exist")
 	}
 
-	s[classCode] = append(s[classCode], &Schedule{
+	m[classCode] = append(m[classCode], &Schedule{
+		ClassCode:  classCode,
 		ClassNo:    classNo,
 		ArrivedAt:  time.Now(),
 		Order:      0,
@@ -43,60 +44,60 @@ func (s Schedules) AppendSchedule(classCode string, classNo int) error {
 }
 
 // RemoveSchedule remove schedule
-func (s Schedules) RemoveSchedule(classCode string, classNo int) error {
-	i, _ := s.FindSchedule(classCode, classNo)
+func (m MapSchedules) RemoveSchedule(classCode string, classNo int) error {
+	i, _ := m.FindSchedule(classCode, classNo)
 	if i == -1 {
 		return errors.New("schedule not found")
 	}
 
-	s[classCode] = append(s[classCode][:i], s[classCode][i+1:]...)
+	m[classCode] = append(m[classCode][:i], m[classCode][i+1:]...)
 	return nil
 }
 
 // UpdateOrder is update order
-func (s Schedules) UpdateOrder(classCode string, classNo int, order int) error {
-	i, p := s.FindSchedule(classCode, classNo)
+func (m MapSchedules) UpdateOrder(classCode string, classNo int, order int) error {
+	i, s := m.FindSchedule(classCode, classNo)
 	if i == -1 {
 		return errors.New("schedule not found")
 	}
 
-	p.Order = order
+	s.Order = order
 	return nil
 }
 
 // ToggleIsNotified toggle IsNotified
-func (s Schedules) ToggleIsNotified(classCode string, classNo int) error {
-	i, p := s.FindSchedule(classCode, classNo)
+func (m MapSchedules) ToggleIsNotified(classCode string, classNo int) error {
+	i, s := m.FindSchedule(classCode, classNo)
 	if i == -1 {
 		return errors.New("schedule not found")
 	}
-	p.IsNotified = !p.IsNotified
+	s.IsNotified = !s.IsNotified
 	return nil
 }
 
 // ToggleIsMeeting toggle IsMeeting
-func (s Schedules) ToggleIsMeeting(classCode string, classNo int) error {
-	i, p := s.FindSchedule(classCode, classNo)
+func (m MapSchedules) ToggleIsMeeting(classCode string, classNo int) error {
+	i, s := m.FindSchedule(classCode, classNo)
 	if i == -1 {
 		return errors.New("schedule not found")
 	}
-	p.IsMeeting = !p.IsMeeting
+	s.IsMeeting = !s.IsMeeting
 	return nil
 }
 
 // ToggleIsComplete toggle IsComplete
-func (s Schedules) ToggleIsComplete(classCode string, classNo int) error {
-	i, p := s.FindSchedule(classCode, classNo)
+func (m MapSchedules) ToggleIsComplete(classCode string, classNo int) error {
+	i, s := m.FindSchedule(classCode, classNo)
 	if i == -1 {
 		return errors.New("schedule not found")
 	}
-	p.IsComplete = !p.IsComplete
+	s.IsComplete = !s.IsComplete
 	return nil
 }
 
 // FindSchedule find schedule by given classCode and classNo
-func (s Schedules) FindSchedule(classCode string, classNo int) (int, *Schedule) {
-	for i, d := range s[classCode] {
+func (m MapSchedules) FindSchedule(classCode string, classNo int) (int, *Schedule) {
+	for i, d := range m[classCode] {
 		if d.ClassNo == classNo {
 			return i, d
 		}
