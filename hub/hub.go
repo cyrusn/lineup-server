@@ -13,6 +13,8 @@ type Hub struct {
 	ChanMapScheudle chan schedule.MapSchedules
 	ChanMessage     chan chatroom.Message
 	Clients         map[*websocket.Conn]bool
+	MapSchedule     schedule.MapSchedules
+	Message         chatroom.Message
 }
 
 // New create a new hub
@@ -23,6 +25,8 @@ func New() *Hub {
 		ChanMapScheudle: make(chan schedule.MapSchedules),
 		ChanMessage:     make(chan chatroom.Message),
 		Clients:         make(map[*websocket.Conn]bool),
+		MapSchedule:     make(schedule.MapSchedules),
+		Message:         chatroom.Message{},
 	}
 }
 

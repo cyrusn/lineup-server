@@ -4,22 +4,18 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/cyrusn/lineup-system/chatroom"
 	"github.com/cyrusn/lineup-system/hub"
-	"github.com/cyrusn/lineup-system/schedule"
 	"github.com/gorilla/websocket"
 )
 
 // Client ...
 type Client struct {
-	Hub          *hub.Hub
-	Conn         *websocket.Conn
-	MapSchedules schedule.MapSchedules
-	Message      chatroom.Message
+	Hub  *hub.Hub
+	Conn *websocket.Conn
 }
 
 // ServeWS is a handler for connection
-func ServeWS(h *hub.Hub, s schedule.MapSchedules, w http.ResponseWriter, r *http.Request) {
+func ServeWS(h *hub.Hub, w http.ResponseWriter, r *http.Request) {
 	Upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -30,10 +26,8 @@ func ServeWS(h *hub.Hub, s schedule.MapSchedules, w http.ResponseWriter, r *http
 		log.Printf("error: %v", err)
 	}
 	c := &Client{
-		Hub:          h,
-		Conn:         conn,
-		MapSchedules: s,
-		Message:      chatroom.Message{},
+		Hub:  h,
+		Conn: conn,
 	}
 	c.Hub.Register <- conn
 	go c.Read()
@@ -47,35 +41,14 @@ func (c *Client) Read() {
 	}()
 
 	for {
-		go c.ReadMessage()
-	}
-}
-
-// ReadSchedule read schedule update from client
-func (c *Client) ReadSchedule() {
-	err := c.Conn.ReadJSON(c.MapSchedules)
-	if err != nil {
-		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-			log.Printf("error: %v", err)
+		err := c.Conn.ReadJSON(&c.Hub.Message)
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
+				c.Hub.Unregister <- c.Conn
+			}
+			break
 		}
-		return
+		c.Hub.ChanMessage <- c.Hub.Message
 	}
-	c.Hub.ChanMapScheudle <- c.MapSchedules
-}
-
-// ReadMessage read message update from client
-func (c *Client) ReadMessage() {
-	err := c.Conn.ReadJSON(c.Message)
-	if err != nil {
-		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-			log.Printf("error: %v", err)
-		}
-		return
-	}
-	c.Hub.ChanMessage <- c.Message
-}
-
-// BroadcastSchedule broadcast schedule
-func (c *Client) BroadcastSchedule() {
-	c.Hub.ChanMapScheudle <- c.MapSchedules
 }

@@ -4,8 +4,8 @@ import "time"
 
 // Message store information of message send
 type Message struct {
-	Form    string
-	Name    string
-	Content string
-	IssueAt time.Time
+	Form    string    `json:"form"`
+	Name    string    `json:"name"`
+	Content string    `json:"content"`
+	IssueAt time.Time `json:"issueAt"`
 }
