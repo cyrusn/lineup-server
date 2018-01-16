@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/cyrusn/goHTTPHelper"
+	"github.com/cyrusn/lineup-system/client"
 	"github.com/cyrusn/lineup-system/hub"
 	"github.com/cyrusn/lineup-system/route"
+	"github.com/cyrusn/lineup-system/schedule"
 	"github.com/gorilla/mux"
 )
 
@@ -25,12 +27,15 @@ func init() {
 func main() {
 	r := mux.NewRouter()
 	h := hub.New()
+	mapSchedules := make(schedule.MapSchedules)
+
+	go h.Run()
 
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		h.ServeWS(w, r)
+		client.ServeWS(h, mapSchedules, w, r)
 	})
 
-	for _, ro := range route.Routes(h) {
+	for _, ro := range route.Routes(h, mapSchedules) {
 		r.
 			PathPrefix("/api/").
 			Methods(ro.Methods...).

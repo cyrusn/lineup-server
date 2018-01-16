@@ -1,60 +1,54 @@
 package hub
 
 import (
-	"log"
-	"net/http"
-
+	"github.com/cyrusn/lineup-system/chatroom"
 	"github.com/cyrusn/lineup-system/schedule"
 	"github.com/gorilla/websocket"
 )
 
 // Hub is a hub store everything needs for create a websocket server
 type Hub struct {
-	MapSchedules     schedule.MapSchedules
-	SchedulesClients map[*websocket.Conn]bool
+	Register        chan *websocket.Conn
+	Unregister      chan *websocket.Conn
+	ChanMapScheudle chan schedule.MapSchedules
+	ChanMessage     chan chatroom.Message
+	Clients         map[*websocket.Conn]bool
 }
 
 // New create a new hub
 func New() *Hub {
 	return &Hub{
-		MapSchedules:     schedule.New(),
-		SchedulesClients: make(map[*websocket.Conn]bool),
+		Register:        make(chan *websocket.Conn),
+		Unregister:      make(chan *websocket.Conn),
+		ChanMapScheudle: make(chan schedule.MapSchedules),
+		ChanMessage:     make(chan chatroom.Message),
+		Clients:         make(map[*websocket.Conn]bool),
 	}
 }
 
-// ServeWS is a handler for connection
-func (h *Hub) ServeWS(w http.ResponseWriter, r *http.Request) {
-	Upgrader := websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
-	ws, err := Upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("error: %v", err)
-	}
-	defer ws.Close()
-	h.SchedulesClients[ws] = true
-	ReadLoop(ws)
-}
-
-// ReadLoop read the connection to process close, ping and pong messages
-func ReadLoop(ws *websocket.Conn) {
+// Run select chan type to do relative action
+func (h *Hub) Run() {
 	for {
-		if _, _, err := ws.NextReader(); err != nil {
-			ws.Close()
+		select {
+		case c := <-h.Register:
+			h.Clients[c] = true
 			break
-		}
-	}
-}
-
-// BoardcastSchedule boardcast MapSchedules to all clients
-func (h *Hub) BoardcastSchedule() {
-	for client := range h.SchedulesClients {
-		if err := client.WriteJSON(h.MapSchedules); err != nil {
-			log.Printf("error: %v", err)
-			client.Close()
-			delete(h.SchedulesClients, client)
+		case c := <-h.Unregister:
+			if _, ok := h.Clients[c]; ok {
+				c.Close()
+				delete(h.Clients, c)
+			}
+			break
+		case c := <-h.ChanMapScheudle:
+			for client := range h.Clients {
+				client.WriteJSON(c)
+			}
+			break
+		case c := <-h.ChanMessage:
+			for client := range h.Clients {
+				client.WriteJSON(c)
+			}
+			break
 		}
 	}
 }
