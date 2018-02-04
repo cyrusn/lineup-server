@@ -10,8 +10,8 @@ import (
 
 func getScheduleHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("boardcast"))
 		hub.ChanMapScheudle <- hub.MapSchedule
+		w.Write([]byte("boardcast"))
 	}
 }
 
@@ -29,9 +29,9 @@ func addScheduleHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
 		}
 
 		message := fmt.Sprintf("%s%d added", classCode, classNo)
-		w.Write([]byte(message))
 
 		hub.ChanMapScheudle <- hub.MapSchedule
+		w.Write([]byte(message))
 	}
 }
 
