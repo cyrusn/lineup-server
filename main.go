@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/cyrusn/goHTTPHelper"
 	"github.com/cyrusn/lineup-system/client"
@@ -12,18 +13,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const version = "1.0.1"
+
 var (
 	port                 string
 	staticFolderLocation string
+	versionFlag          bool
 )
 
 func init() {
+	flag.BoolVar(&versionFlag, "version", false, "Prints current version")
+
 	flag.StringVar(&port, "port", ":5000", "Port value")
-	flag.StringVar(&staticFolderLocation, "static", "../static/dist", "location of static folder to be served")
+	flag.StringVar(&staticFolderLocation, "static", "../static/dist", "Location of static folder to be served")
+	flag.Usage = func() {
+		fmt.Printf("Server of line up system:\n")
+		fmt.Printf("Usage:\n\n")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 }
 
 func main() {
+	if versionFlag {
+		fmt.Printf("Version %s\n", version)
+		os.Exit(0)
+	}
+
 	r := mux.NewRouter()
 	h := hub.New()
 
