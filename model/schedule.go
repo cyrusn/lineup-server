@@ -2,6 +2,7 @@ package model
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -16,6 +17,7 @@ type Schedule struct {
 	IsComplete bool      `json:"isComplete"`
 }
 
+// ScheduleDB is *sql.DB
 type ScheduleDB struct {
 	*sql.DB
 }
@@ -45,12 +47,10 @@ func (db ScheduleDB) SelectByClassCode(classcode string) ([]*Schedule, error) {
 
 		schedules = append(schedules, s)
 	}
-
 	return schedules, nil
-
 }
 
-// Insert ...
+// Insert Schedule by given classCode and classNo
 func (db ScheduleDB) Insert(classCode string, classNo int) error {
 	_, err := db.Exec(`INSERT INTO SCHEDULE (
       classcode,
@@ -71,19 +71,74 @@ func (db ScheduleDB) Insert(classCode string, classNo int) error {
 	return nil
 }
 
-// // RemoveSchedule ...
-// func RemoveSchedule(classcode string, classno int) error {
+// DeleteSchedule delete schedule
+func (db ScheduleDB) DeleteSchedule(classcode string, classno int) error {
 
-// }
+	if _, err := db.Exec(
+		`DELETE FROM SCHEDULE WHERE (
+      classcode = ? and classno = ?
+    )`,
+		classcode, classno,
+	); err != nil {
+		return err
+	}
 
-// // UpdatePriority ...
-// func UpdatePriority(classcode string, classno int) error {}
+	return nil
+}
 
-// // ToggleIsNotified ...
-// func ToggleIsNotified(classcode string, classno int) error {}
+// UpdatePriority update schedule's priority
+func (db ScheduleDB) UpdatePriority(classcode string, classno int, priority int) error {
+	if _, err := db.Exec(
+		`UPDATE SCHEDULE SET priority = ? WHERE (
+      classcode = ? and classno = ?
+    )`,
+		priority, classcode, classno,
+	); err != nil {
+		return err
+	}
 
-// // ToggleIsMeeting ...
-// func ToggleIsMeeting(classcode string, classno int) error {}
+	return nil
+}
 
-// // ToggleIsComplete ...
-// func ToggleIsComplete(classcode string, classno int) error {}
+func (db ScheduleDB) toggleFactory(key string) func(string, int) error {
+	return func(classCode string, classNo int) error {
+		var boolVar bool
+		query := fmt.Sprintf(`SELECT %s FROM SCHEDULE WHERE (
+      classcode = ? and classno = ?
+    )`, key)
+		err := db.QueryRow(query,
+			classCode, classNo).Scan(&boolVar)
+
+		if err != nil {
+			return err
+		}
+
+		exec := fmt.Sprintf(`
+    UPDATE SCHEDULE SET %s = ? WHERE (
+      classcode = ? and classno = ?
+    )`, key)
+
+		if _, err := db.Exec(exec,
+			!boolVar, classCode, classNo,
+		); err != nil {
+			return err
+		}
+		return nil
+
+	}
+}
+
+// ToggleIsNotified toggle IsNotified
+func (db ScheduleDB) ToggleIsNotified(classCode string, classNo int) error {
+	return db.toggleFactory("is_notified")(classCode, classNo)
+}
+
+// ToggleIsMeeting toggle IsMeeting
+func (db ScheduleDB) ToggleIsMeeting(classCode string, classNo int) error {
+	return db.toggleFactory("is_meeting")(classCode, classNo)
+}
+
+// ToggleIsComplete toggle IsComplete
+func (db ScheduleDB) ToggleIsComplete(classCode string, classNo int) error {
+	return db.toggleFactory("is_complete")(classCode, classNo)
+}
