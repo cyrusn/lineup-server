@@ -5,136 +5,156 @@ import (
 	"net/http"
 
 	"github.com/cyrusn/goHTTPHelper"
-	"github.com/cyrusn/lineup-system/hub"
+	"github.com/cyrusn/lineup-system/model"
 )
 
-func getScheduleHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		hub.ChanMapScheudle <- hub.MapSchedule
-		w.Write([]byte("boardcast"))
-	}
+type successMessage struct {
+	Message string `json:"message"`
 }
 
-func addScheduleHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		classCode, classNo, err := readClassCodeAndClassNo(w, r)
-		if err != nil {
-			return
-		}
+// ScheduleStore contains all method to manipulate schedule
+type ScheduleStore interface {
+	Insert(string, int) error
+	Delete(string, int) error
+	SelectByClassCode(string) ([]*model.Schedule, error)
+	UpdatePriority(string, int, int) error
+	ToggleIsNotified(string, int) error
+	ToggleIsMeeting(string, int) error
+	ToggleIsComplete(string, int) error
+}
 
-		if err := hub.MapSchedule.AppendSchedule(classCode, classNo); err != nil {
-			errCode := http.StatusNotFound
+func getScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		classCode := readClassCode(w, r)
+		schedules, err := s.SelectByClassCode(classCode)
+		errCode := http.StatusBadRequest
+
+		if err != nil {
 			helper.PrintError(w, err, errCode)
 			return
 		}
-
-		message := fmt.Sprintf("%s%d added", classCode, classNo)
-
-		hub.ChanMapScheudle <- hub.MapSchedule
-		w.Write([]byte(message))
+		helper.PrintJSON(w, schedules, errCode)
 	}
 }
 
-func removeScheduleHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		classCode, classNo, err := readClassCodeAndClassNo(w, r)
-		if err != nil {
-			return
-		}
-
-		if err := hub.MapSchedule.RemoveSchedule(classCode, classNo); err != nil {
-			errCode := http.StatusNotFound
-			helper.PrintError(w, err, errCode)
-			return
-		}
-
-		hub.ChanMapScheudle <- hub.MapSchedule
-
-		message := fmt.Sprintf("%s%d removed", classCode, classNo)
-		w.Write([]byte(message))
-	}
-}
-
-func updateOrderHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
+func addScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
-		order, err := readOrder(r)
-		if err != nil {
-			helper.PrintError(w, err, errCode)
-			return
-		}
 
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
 		if err != nil {
-			return
-		}
-
-		if err := hub.MapSchedule.UpdateOrder(classCode, classNo, order); err != nil {
-			errCode := http.StatusNotFound
 			helper.PrintError(w, err, errCode)
 			return
 		}
-		hub.ChanMapScheudle <- hub.MapSchedule
 
-		message := fmt.Sprintf("%s%d updated order to %d", classCode, classNo, order)
-		w.Write([]byte(message))
+		if err := s.Insert(classCode, classNo); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		message := fmt.Sprintf("%s%d is added", classCode, classNo)
+		helper.PrintJSON(w, successMessage{message}, errCode)
 	}
 }
 
-func toggleIsCompleteHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
+func removeScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		errCode := http.StatusBadRequest
+
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
 		if err != nil {
-			return
-		}
-
-		if err := hub.MapSchedule.ToggleIsComplete(classCode, classNo); err != nil {
-			errCode := http.StatusNotFound
 			helper.PrintError(w, err, errCode)
 			return
 		}
 
-		hub.ChanMapScheudle <- hub.MapSchedule
+		if err := s.Delete(classCode, classNo); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		message := fmt.Sprintf("%s%d is removed", classCode, classNo)
+		helper.PrintJSON(w, successMessage{message}, errCode)
+	}
+}
+
+func updatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		errCode := http.StatusBadRequest
+		priority, err := readRriority(r)
+		if err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		classCode, classNo, err := readClassCodeAndClassNo(w, r)
+		if err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		if err := s.UpdatePriority(classCode, classNo, priority); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		message := fmt.Sprintf("%s%d's priority updated to %d", classCode, classNo, priority)
+		helper.PrintJSON(w, successMessage{message}, errCode)
+	}
+}
+
+func toggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		errCode := http.StatusBadRequest
+		classCode, classNo, err := readClassCodeAndClassNo(w, r)
+		if err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		if err := s.ToggleIsComplete(classCode, classNo); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
 
 		message := fmt.Sprintf("%s%d toggled completed", classCode, classNo)
-		w.Write([]byte(message))
+		helper.PrintJSON(w, successMessage{message}, errCode)
 	}
 }
 
-func toggleIsNotifiedHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
+func toggleIsNotifiedHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		errCode := http.StatusBadRequest
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
 		if err != nil {
-			return
-		}
-
-		if err := hub.MapSchedule.ToggleIsNotified(classCode, classNo); err != nil {
-			errCode := http.StatusNotFound
 			helper.PrintError(w, err, errCode)
 			return
 		}
-		hub.ChanMapScheudle <- hub.MapSchedule
+
+		if err := s.ToggleIsNotified(classCode, classNo); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
 
 		message := fmt.Sprintf("%s%d toggled isNotified", classCode, classNo)
-		w.Write([]byte(message))
+		helper.PrintJSON(w, successMessage{message}, errCode)
 	}
 }
 
-func toggleIsMeetingHandler(hub *hub.Hub) func(http.ResponseWriter, *http.Request) {
+func toggleIsMeetingHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		errCode := http.StatusBadRequest
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
 		if err != nil {
-			return
-		}
-
-		if err := hub.MapSchedule.ToggleIsMeeting(classCode, classNo); err != nil {
-			errCode := http.StatusNotFound
 			helper.PrintError(w, err, errCode)
 			return
 		}
-		hub.ChanMapScheudle <- hub.MapSchedule
+
+		if err := s.ToggleIsMeeting(classCode, classNo); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
 
 		message := fmt.Sprintf("%s%d toggled isMeeting", classCode, classNo)
-		w.Write([]byte(message))
+		helper.PrintJSON(w, successMessage{message}, errCode)
 	}
 }

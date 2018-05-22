@@ -8,6 +8,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func readClassCode(w http.ResponseWriter, r *http.Request) string {
+	classCode := mux.Vars(r)["classcode"]
+	return classCode
+}
+
 // readClassCodeAndClassNo read classcode and classno in mux.Vars
 func readClassCodeAndClassNo(w http.ResponseWriter, r *http.Request) (string, int, error) {
 	errCode := http.StatusBadRequest
@@ -22,11 +27,11 @@ func readClassCodeAndClassNo(w http.ResponseWriter, r *http.Request) (string, in
 	return classCode, classNo, nil
 }
 
-func readOrder(r *http.Request) (int, error) {
-	orderString := mux.Vars(r)["order"]
-	order, err := strconv.Atoi(orderString)
+func readRriority(r *http.Request) (int, error) {
+	priorityString := mux.Vars(r)["priority"]
+	priority, err := strconv.Atoi(priorityString)
 	if err != nil {
 		return 0, err
 	}
-	return order, nil
+	return priority, nil
 }
