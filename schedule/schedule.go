@@ -1,7 +1,9 @@
+// Package schedule manage database, the code below is written for sqlite
 package schedule
 
 import (
-	"errors"
+	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -10,97 +12,112 @@ type Schedule struct {
 	ClassCode  string    `json:"classcode"`
 	ClassNo    int       `json:"classno"`
 	ArrivedAt  time.Time `json:"arrivedAt"`
-	Order      int       `json:"order"`
+	Priority   int       `json:"priority"`
 	IsNotified bool      `json:"isNotified"`
 	IsMeeting  bool      `json:"isMeeting"`
 	IsComplete bool      `json:"isComplete"`
 }
 
-// MapSchedules is a slice of Schedule
-type MapSchedules map[string][]*Schedule
-
-// New create new MapSchedules
-func New() MapSchedules {
-	return make(map[string][]*Schedule)
+// DB is *sql.DB that store information of schedule
+type DB struct {
+	*sql.DB
 }
 
-// AppendSchedule append a new schedule to schedules
-func (m MapSchedules) AppendSchedule(classCode string, classNo int) error {
-	_, s := m.FindSchedule(classCode, classNo)
-	if s != nil {
-		return errors.New("schedule is already exist")
+// SelectByClassCode find all schedules by classcode
+func (db *DB) SelectByClassCode(classcode string) ([]*Schedule, error) {
+	var schedules []*Schedule
+	rows, err := db.Query(`SELECT * FROM SCHEDULE WHERE classcode = ?`, classcode)
+	if err != nil {
+		return nil, err
 	}
 
-	m[classCode] = append(m[classCode], &Schedule{
-		ClassCode:  classCode,
-		ClassNo:    classNo,
-		ArrivedAt:  time.Now(),
-		Order:      0,
-		IsNotified: false,
-		IsMeeting:  false,
-		IsComplete: false,
-	})
-	return nil
+	defer rows.Close()
+	for rows.Next() {
+		s := new(Schedule)
+		if err := rows.Scan(
+			&s.ClassCode,
+			&s.ClassNo,
+			&s.ArrivedAt,
+			&s.Priority,
+			&s.IsNotified,
+			&s.IsMeeting,
+			&s.IsComplete,
+		); err != nil {
+			return nil, err
+		}
+
+		schedules = append(schedules, s)
+	}
+	return schedules, nil
 }
 
-// RemoveSchedule remove schedule
-func (m MapSchedules) RemoveSchedule(classCode string, classNo int) error {
-	i, _ := m.FindSchedule(classCode, classNo)
-	if i == -1 {
-		return errors.New("schedule not found")
-	}
+// Insert Schedule by given classCode and classNo
+func (db *DB) Insert(classCode string, classNo int) error {
+	_, err := db.Exec(`INSERT INTO SCHEDULE (
+      classcode,
+      classno,
+      arrived_at,
+      priority,
+      is_notified,
+      is_meeting,
+      is_complete
+    ) values (?, ?, ?, ?, ?, ?, ?)`,
+		classCode, classNo, time.Now(), 0, false, false, false,
+	)
 
-	m[classCode] = append(m[classCode][:i], m[classCode][i+1:]...)
-	return nil
+	return err
 }
 
-// UpdateOrder is update order
-func (m MapSchedules) UpdateOrder(classCode string, classNo int, order int) error {
-	i, s := m.FindSchedule(classCode, classNo)
-	if i == -1 {
-		return errors.New("schedule not found")
-	}
+// Delete delete schedule
+func (db *DB) Delete(classcode string, classno int) error {
+	_, err := db.Exec(
+		`DELETE FROM SCHEDULE WHERE (
+      classcode = ? and classno = ?
+    )`,
+		classcode, classno,
+	)
 
-	s.Order = order
-	return nil
+	return err
+}
+
+// UpdatePriority update schedule's priority
+func (db *DB) UpdatePriority(classcode string, classno int, priority int) error {
+	_, err := db.Exec(`UPDATE SCHEDULE SET priority = ? WHERE (
+      classcode = ? and classno = ?
+    )`,
+		priority, classcode, classno,
+	)
+
+	return err
+}
+
+func (db *DB) toggleFactory(key string) func(string, int) error {
+	return func(classCode string, classNo int) error {
+
+		exec := fmt.Sprintf(`
+    UPDATE SCHEDULE SET %s = NOT %s WHERE (
+      classcode = ? and classno = ?
+    )`, key, key)
+
+		_, err := db.Exec(exec,
+			classCode, classNo,
+		)
+		return err
+
+	}
 }
 
 // ToggleIsNotified toggle IsNotified
-func (m MapSchedules) ToggleIsNotified(classCode string, classNo int) error {
-	i, s := m.FindSchedule(classCode, classNo)
-	if i == -1 {
-		return errors.New("schedule not found")
-	}
-	s.IsNotified = !s.IsNotified
-	return nil
+func (db *DB) ToggleIsNotified(classCode string, classNo int) error {
+	return db.toggleFactory("is_notified")(classCode, classNo)
 }
 
 // ToggleIsMeeting toggle IsMeeting
-func (m MapSchedules) ToggleIsMeeting(classCode string, classNo int) error {
-	i, s := m.FindSchedule(classCode, classNo)
-	if i == -1 {
-		return errors.New("schedule not found")
-	}
-	s.IsMeeting = !s.IsMeeting
-	return nil
+func (db *DB) ToggleIsMeeting(classCode string, classNo int) error {
+	return db.toggleFactory("is_meeting")(classCode, classNo)
 }
 
 // ToggleIsComplete toggle IsComplete
-func (m MapSchedules) ToggleIsComplete(classCode string, classNo int) error {
-	i, s := m.FindSchedule(classCode, classNo)
-	if i == -1 {
-		return errors.New("schedule not found")
-	}
-	s.IsComplete = !s.IsComplete
-	return nil
-}
-
-// FindSchedule find schedule by given classCode and classNo
-func (m MapSchedules) FindSchedule(classCode string, classNo int) (int, *Schedule) {
-	for i, d := range m[classCode] {
-		if d.ClassNo == classNo {
-			return i, d
-		}
-	}
-	return -1, nil
+func (db *DB) ToggleIsComplete(classCode string, classNo int) error {
+	return db.toggleFactory("is_complete")(classCode, classNo)
 }

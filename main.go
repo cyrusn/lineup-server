@@ -1,6 +1,16 @@
 package main
 
 import (
+	"github.com/cyrusn/lineup-system/cmd"
+	_ "github.com/mattn/go-sqlite3"
+)
+
+func main() {
+	cmd.Execute()
+}
+
+/*
+import (
 	"flag"
 	"fmt"
 	"net/http"
@@ -11,9 +21,14 @@ import (
 	"github.com/cyrusn/lineup-system/hub"
 	"github.com/cyrusn/lineup-system/route"
 	"github.com/gorilla/mux"
+	// https://github.com/spf13/cobra
 )
 
-const version = "1.0.1"
+// TODO: Use cobra to provide commands as listed below
+// 	- serve (use for serve the backend server)
+// 	- init (create database and import students list)
+
+const version = "2.0.0"
 
 var (
 	port                 string
@@ -27,7 +42,7 @@ func init() {
 	flag.StringVar(&port, "port", ":5000", "Port value")
 	flag.StringVar(&staticFolderLocation, "static", "../static/dist", "Location of static folder to be served")
 	flag.Usage = func() {
-		fmt.Printf("Server of line up system:\n")
+		fmt.Printf("Server of line-up system:\n")
 		fmt.Printf("Usage:\n\n")
 		flag.PrintDefaults()
 	}
@@ -66,3 +81,4 @@ func main() {
 	fmt.Printf("Server start on http://%s\n", location)
 	http.ListenAndServe(location, helper.Logger(r))
 }
+*/

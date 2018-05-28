@@ -1,11 +1,11 @@
-package route
+package handler
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/cyrusn/goHTTPHelper"
-	"github.com/cyrusn/lineup-system/model"
+	"github.com/cyrusn/lineup-system/schedule"
 )
 
 type successMessage struct {
@@ -16,14 +16,15 @@ type successMessage struct {
 type ScheduleStore interface {
 	Insert(string, int) error
 	Delete(string, int) error
-	SelectByClassCode(string) ([]*model.Schedule, error)
+	SelectByClassCode(string) ([]*schedule.Schedule, error)
 	UpdatePriority(string, int, int) error
 	ToggleIsNotified(string, int) error
 	ToggleIsMeeting(string, int) error
 	ToggleIsComplete(string, int) error
 }
 
-func getScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// GetScheduleHandler is handler to get schedules by given classcode in get request
+func GetScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		classCode := readClassCode(w, r)
 		schedules, err := s.SelectByClassCode(classCode)
@@ -33,11 +34,13 @@ func getScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request
 			helper.PrintError(w, err, errCode)
 			return
 		}
-		helper.PrintJSON(w, schedules, errCode)
+		helper.PrintJSON(w, schedules)
 	}
 }
 
-func addScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// AddScheduleHandler is handler to add schedules by given classcode
+// and classno in post request
+func AddScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 
@@ -53,11 +56,13 @@ func addScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request
 		}
 
 		message := fmt.Sprintf("%s%d is added", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message}, errCode)
+		helper.PrintJSON(w, successMessage{message})
 	}
 }
 
-func removeScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// RemoveScheduleHandler is handler to remove schedules by given classcode
+// and classno in DELETE request
+func RemoveScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 
@@ -73,11 +78,13 @@ func removeScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Requ
 		}
 
 		message := fmt.Sprintf("%s%d is removed", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message}, errCode)
+		helper.PrintJSON(w, successMessage{message})
 	}
 }
 
-func updatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// UpdatePriorityHandler is handler to update schedules's priority by given classcode
+// and classno in PUT request
+func UpdatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 		priority, err := readRriority(r)
@@ -98,11 +105,13 @@ func updatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Requ
 		}
 
 		message := fmt.Sprintf("%s%d's priority updated to %d", classCode, classNo, priority)
-		helper.PrintJSON(w, successMessage{message}, errCode)
+		helper.PrintJSON(w, successMessage{message})
 	}
 }
 
-func toggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// ToggleIsCompleteHandler is handler to TOGGLE schedules's IsComplete by given
+// classcode and classno in PUT request
+func ToggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
@@ -117,11 +126,13 @@ func toggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Re
 		}
 
 		message := fmt.Sprintf("%s%d toggled completed", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message}, errCode)
+		helper.PrintJSON(w, successMessage{message})
 	}
 }
 
-func toggleIsNotifiedHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// ToggleIsNotifiedHandler is handler to TOGGLE schedules's IsNotified by given
+// classcode and classno in PUT request
+func ToggleIsNotifiedHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
@@ -136,11 +147,13 @@ func toggleIsNotifiedHandler(s ScheduleStore) func(http.ResponseWriter, *http.Re
 		}
 
 		message := fmt.Sprintf("%s%d toggled isNotified", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message}, errCode)
+		helper.PrintJSON(w, successMessage{message})
 	}
 }
 
-func toggleIsMeetingHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// ToggleIsMeetingHandler is handler to TOGGLE schedules's IsMeeting by given
+// classcode and classno in PUT request
+func ToggleIsMeetingHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
@@ -155,6 +168,6 @@ func toggleIsMeetingHandler(s ScheduleStore) func(http.ResponseWriter, *http.Req
 		}
 
 		message := fmt.Sprintf("%s%d toggled isMeeting", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message}, errCode)
+		helper.PrintJSON(w, successMessage{message})
 	}
 }
