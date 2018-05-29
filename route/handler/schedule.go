@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/cyrusn/goHTTPHelper"
-	"github.com/cyrusn/lineup-system/schedule"
+	"github.com/cyrusn/lineup-system/model/schedule"
 )
 
 type successMessage struct {
@@ -109,9 +109,12 @@ func UpdatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Requ
 	}
 }
 
-// ToggleIsCompleteHandler is handler to TOGGLE schedules's IsComplete by given
-// classcode and classno in PUT request
-func ToggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+func getToggleFunc(s ScheduleStore, name string) func(http.ResponseWriter, *http.Request) {
+	mapFunc := make(map[string]func(string, int) error)
+	mapFunc["IsNotified"] = s.ToggleIsNotified
+	mapFunc["IsComplete"] = s.ToggleIsComplete
+	mapFunc["IsMeeting"] = s.ToggleIsMeeting
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 		classCode, classNo, err := readClassCodeAndClassNo(w, r)
@@ -120,54 +123,36 @@ func ToggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Re
 			return
 		}
 
-		if err := s.ToggleIsComplete(classCode, classNo); err != nil {
+		toggleFunc, ok := mapFunc[name]
+		if !ok {
 			helper.PrintError(w, err, errCode)
 			return
 		}
 
-		message := fmt.Sprintf("%s%d toggled completed", classCode, classNo)
+		if err := toggleFunc(classCode, classNo); err != nil {
+			helper.PrintError(w, err, errCode)
+			return
+		}
+
+		message := fmt.Sprintf("%s%d toggled %s", classCode, classNo, name)
 		helper.PrintJSON(w, successMessage{message})
 	}
+}
+
+// ToggleIsCompleteHandler is handler to TOGGLE schedules's IsComplete by given
+// classcode and classno in PUT request
+func ToggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return getToggleFunc(s, "IsComplete")
 }
 
 // ToggleIsNotifiedHandler is handler to TOGGLE schedules's IsNotified by given
 // classcode and classno in PUT request
 func ToggleIsNotifiedHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		errCode := http.StatusBadRequest
-		classCode, classNo, err := readClassCodeAndClassNo(w, r)
-		if err != nil {
-			helper.PrintError(w, err, errCode)
-			return
-		}
-
-		if err := s.ToggleIsNotified(classCode, classNo); err != nil {
-			helper.PrintError(w, err, errCode)
-			return
-		}
-
-		message := fmt.Sprintf("%s%d toggled isNotified", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message})
-	}
+	return getToggleFunc(s, "IsNotified")
 }
 
 // ToggleIsMeetingHandler is handler to TOGGLE schedules's IsMeeting by given
 // classcode and classno in PUT request
 func ToggleIsMeetingHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		errCode := http.StatusBadRequest
-		classCode, classNo, err := readClassCodeAndClassNo(w, r)
-		if err != nil {
-			helper.PrintError(w, err, errCode)
-			return
-		}
-
-		if err := s.ToggleIsMeeting(classCode, classNo); err != nil {
-			helper.PrintError(w, err, errCode)
-			return
-		}
-
-		message := fmt.Sprintf("%s%d toggled isMeeting", classCode, classNo)
-		helper.PrintJSON(w, successMessage{message})
-	}
+	return getToggleFunc(s, "IsMeeting")
 }

@@ -27,7 +27,7 @@ type AuthClaims struct {
 
 // Update use to refresh token
 func (claims *AuthClaims) Update(token *jwt.Token) {
-	claims.ExpiresAt = expireAfter(lifeTime)
+	claims.ExpiresAt = expiresAfter(lifeTime)
 	token.Claims = claims
 }
 
@@ -49,7 +49,7 @@ func LoginHandler(a AuthStore, s auth.Secret) func(http.ResponseWriter, *http.Re
 		claims := AuthClaims{
 			UserAlias: userAlias,
 			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: expireAfter(lifeTime),
+				ExpiresAt: expiresAfter(lifeTime),
 			},
 		}
 		token, err := s.GenerateToken(claims)
@@ -78,7 +78,7 @@ func RefreshHandler(a AuthStore, s auth.Secret) func(http.ResponseWriter, *http.
 	}
 }
 
-func expireAfter(min int64) int64 {
+func expiresAfter(min int64) int64 {
 	return time.Now().Add(time.Minute * time.Duration(min)).Unix()
 }
 
