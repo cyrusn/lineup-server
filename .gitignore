@@ -13,3 +13,6 @@
 
 test/*.db
 test/*.json
+
+public/*
+*_test.go

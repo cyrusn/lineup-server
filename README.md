@@ -1,10 +1,44 @@
 # A simple line up server for parents day
 
-# TODO
-- [ ] System crash when data grown up, should try to use database instead.
-- [ ] For the above issue, have to redesign the data structure.
-- [ ] Add a simple login feature for teacher and student helper
-- [ ] websocket only trigger browser to update, browser should update through http Request
-- [ ] do not update the whole mapSchedule, should split it by form or even class
-- [ ] update only for change related.
-- [ ] reconsider data structure
+## setup
+- create a config file `./config.yaml`, please see below for the default key and value.
+
+``` yaml
+# root command
+config: "./config.yaml"
+key: "skill-vein-planet-neigh-envoi"
+location: "./test/test.db"
+
+# server command
+port: ":5000"
+static: "./public"
+time: 300
+
+# import command
+import: ./data/user.json
+
+# create command
+overwrite: false
+```
+
+## import
+``` json
+// import users by `import` cmd, the schema of the json file is as below
+[
+  {
+    "userAlias": "teacher1",
+    "password": "password1",
+    "role": "teacher"
+  },
+  {
+    "userAlias": "teacher2",
+    "password": "password2",
+    "role": "teacher"
+  },
+  {
+    "userAlias": "student1",
+    "password": "password1",
+    "role": "student"
+  }
+]
+```

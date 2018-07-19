@@ -3,14 +3,20 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cyrusn/goHTTPHelper"
 	"github.com/gorilla/mux"
 )
 
-func readClassCode(w http.ResponseWriter, r *http.Request) string {
-	classCode := mux.Vars(r)["classcode"]
-	return classCode
+func readQueries(r *http.Request, key string) []string {
+	q := r.URL.Query()
+	return q[key]
+}
+
+func readQuery(r *http.Request, key string) string {
+	q := r.URL.Query()
+	return q.Get(key)
 }
 
 // readClassCodeAndClassNo read classcode and classno in mux.Vars
@@ -24,10 +30,10 @@ func readClassCodeAndClassNo(w http.ResponseWriter, r *http.Request) (string, in
 		return "", 0, err
 	}
 
-	return classCode, classNo, nil
+	return strings.ToUpper(classCode), classNo, nil
 }
 
-func readRriority(r *http.Request) (int, error) {
+func readPriority(r *http.Request) (int, error) {
 	priorityString := mux.Vars(r)["priority"]
 	priority, err := strconv.Atoi(priorityString)
 	if err != nil {

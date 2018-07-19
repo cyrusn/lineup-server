@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/cyrusn/goHTTPHelper"
-	"github.com/cyrusn/lineup-system/model/schedule"
+	"github.com/cyrusn/lineup-server/model/schedule"
 )
 
 type successMessage struct {
@@ -16,18 +16,30 @@ type successMessage struct {
 type ScheduleStore interface {
 	Insert(string, int) error
 	Delete(string, int) error
-	SelectByClassCode(string) ([]*schedule.Schedule, error)
+	SelectedBy(*schedule.Query) ([]*schedule.Schedule, error)
 	UpdatePriority(string, int, int) error
 	ToggleIsNotified(string, int) error
 	ToggleIsMeeting(string, int) error
 	ToggleIsComplete(string, int) error
 }
 
-// GetScheduleHandler is handler to get schedules by given classcode in get request
-func GetScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+// GetSchedulesHandler is handler to get schedules by given classcode in get request
+func GetSchedulesHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		classCode := readClassCode(w, r)
-		schedules, err := s.SelectByClassCode(classCode)
+		classcodes := readQueries(r, "classcode")
+		isComplete := readQuery(r, "is_complete")
+		priority := readQuery(r, "priority")
+
+		query := schedule.Query{
+			classcodes, isComplete, priority,
+		}
+
+		schedules, err := s.SelectedBy(&query)
+		if schedules == nil {
+			helper.PrintJSON(w, []string{})
+			return
+		}
+
 		errCode := http.StatusBadRequest
 
 		if err != nil {
@@ -87,7 +99,7 @@ func RemoveScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Requ
 func UpdatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
-		priority, err := readRriority(r)
+		priority, err := readPriority(r)
 		if err != nil {
 			helper.PrintError(w, err, errCode)
 			return

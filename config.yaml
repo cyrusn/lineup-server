@@ -1,0 +1,15 @@
+# root command
+config: "./config.yaml"
+key: "skill-vein-planet-neigh-envoi"
+location: "./test/test.db"
+
+# server command
+port: ":5000"
+static: "./public"
+time: 300
+
+# import command
+import: ./data/user.json
+
+# create command
+overwrite: false

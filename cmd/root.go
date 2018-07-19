@@ -1,50 +1,44 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var (
-	port                 string
-	dbPath               string
-	isOverwrite          bool
-	staticFolderLocation string
-	userJSONPath         string
-
-	rootCmd = &cobra.Command{
-		Use:   "lineup",
-		Short: "Welcome to Line-Up System Backend Server",
-		Run:   rootCmdStartupFunc,
-	}
-)
+var rootCmd = &cobra.Command{
+	Use:   "lineup",
+	Short: "Welcome to Line-Up System Backend Server",
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+	},
+}
 
 func init() {
-	cmds := []*cobra.Command{versionCmd, serveCmd, createCmd, importCmd}
+	rootCmd.PersistentFlags().StringVarP(
+		&cfgFile,
+		"config",
+		"c",
+		"./config.yaml",
+		"config file",
+	)
+	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
 
-	for _, cmd := range cmds {
-		rootCmd.AddCommand(cmd)
-	}
+	rootCmd.PersistentFlags().StringVarP(
+		&privateKey,
+		"key",
+		"k",
+		"skill-vein-planet-neigh-envoi",
+		"change the private key for authentication on jwt",
+	)
+	viper.BindPFlag("key", rootCmd.PersistentFlags().Lookup("key"))
 
-	serveCmd.PersistentFlags().StringVarP(&port, "port", "p", ":5000", "Port value")
-	serveCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
-	serveCmd.PersistentFlags().StringVarP(&staticFolderLocation, "static", "s", "./public", "Location of static folder for serving")
+	rootCmd.PersistentFlags().StringVarP(
+		&dbPath,
+		"location",
+		"l",
+		"./test/test.db",
+		"location of sqlite3 database file",
+	)
+	viper.BindPFlag("location", rootCmd.PersistentFlags().Lookup("location"))
 
-	createCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
-	createCmd.PersistentFlags().BoolVarP(&isOverwrite, "overwrite", "o", false, "Overwrite database if database location exist")
-
-	importCmd.PersistentFlags().StringVarP(&userJSONPath, "import", "i", "./test/user.json", "path to user.json file")
-	importCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
-}
-
-// Execute run all cmds
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func rootCmdStartupFunc(cmd *cobra.Command, args []string) {
-	cmd.Help()
 }

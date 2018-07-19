@@ -8,17 +8,17 @@ import (
 	"log"
 	"os"
 
-	"github.com/cyrusn/lineup-system/auth"
+	"github.com/cyrusn/lineup-server/model/auth"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var importCmd = &cobra.Command{
 	Use:   "import",
-	Short: "import user in database",
+	Short: "Import user in database",
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			log.Fatal(dbPath, " doesn't exist")
-		}
+		paths := []string{dbPath, userJSONPath}
+		checkPathExist(paths)
 
 		file, err := ioutil.ReadFile(userJSONPath)
 		if err != nil {
@@ -41,15 +41,32 @@ var importCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		db := &auth.DB{sqldb}
+		db := &auth.DB{sqldb, &secret}
 
 		for _, c := range credentials {
-			err := db.Insert(c.UserAlias, c.Password)
+			err := db.Insert(c.UserAlias, c.Password, c.Role)
 			if err != nil {
 				fmt.Printf("Import error: %v\n", err)
 				os.Exit(1)
 			}
 		}
-		fmt.Println("users imported")
+		fmt.Println("users are imported")
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(importCmd)
+
+	importCmd.PersistentFlags().StringVarP(
+		&userJSONPath,
+		"import",
+		"i",
+		"./data/user.json",
+		`path of user.json file
+The schema of the json file should be as follow.
+[{"userAlias": "user1", "password": "password1", "role": "teacher"}, ... ]
+`,
+	)
+	viper.BindPFlag("import", importCmd.PersistentFlags().Lookup("import"))
+
 }

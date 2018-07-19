@@ -12,6 +12,11 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of Line-Up System Backend Server",
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println(cfgFile, port, dbPath, isOverwrite, staticFolderLocation, userJSONPath, lifeTime, privateKey)
 		fmt.Println(version)
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
 }
