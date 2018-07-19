@@ -6,7 +6,6 @@ import (
 
 	"github.com/cyrusn/goHTTPHelper"
 	"github.com/cyrusn/lineup-system/model/schedule"
-	"github.com/cyrusn/lineup-system/ws"
 )
 
 type successMessage struct {
@@ -41,7 +40,7 @@ func GetScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request
 
 // AddScheduleHandler is handler to add schedules by given classcode
 // and classno in post request
-func AddScheduleHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *http.Request) {
+func AddScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 
@@ -58,13 +57,12 @@ func AddScheduleHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *h
 
 		message := fmt.Sprintf("%s%d is added", classCode, classNo)
 		helper.PrintJSON(w, successMessage{message})
-		h.Broadcast <- []byte(classCode)
 	}
 }
 
 // RemoveScheduleHandler is handler to remove schedules by given classcode
 // and classno in DELETE request
-func RemoveScheduleHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *http.Request) {
+func RemoveScheduleHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 
@@ -81,13 +79,12 @@ func RemoveScheduleHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter,
 
 		message := fmt.Sprintf("%s%d is removed", classCode, classNo)
 		helper.PrintJSON(w, successMessage{message})
-		h.Broadcast <- []byte(classCode)
 	}
 }
 
 // UpdatePriorityHandler is handler to update schedules's priority by given classcode
 // and classno in PUT request
-func UpdatePriorityHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *http.Request) {
+func UpdatePriorityHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		errCode := http.StatusBadRequest
 		priority, err := readRriority(r)
@@ -109,11 +106,10 @@ func UpdatePriorityHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter,
 
 		message := fmt.Sprintf("%s%d's priority updated to %d", classCode, classNo, priority)
 		helper.PrintJSON(w, successMessage{message})
-		h.Broadcast <- []byte(classCode)
 	}
 }
 
-func getToggleFunc(s ScheduleStore, h *ws.Hub, name string) func(http.ResponseWriter, *http.Request) {
+func getToggleFunc(s ScheduleStore, name string) func(http.ResponseWriter, *http.Request) {
 	mapFunc := make(map[string]func(string, int) error)
 	mapFunc["IsNotified"] = s.ToggleIsNotified
 	mapFunc["IsComplete"] = s.ToggleIsComplete
@@ -140,24 +136,23 @@ func getToggleFunc(s ScheduleStore, h *ws.Hub, name string) func(http.ResponseWr
 
 		message := fmt.Sprintf("%s%d toggled %s", classCode, classNo, name)
 		helper.PrintJSON(w, successMessage{message})
-		h.Broadcast <- []byte(classCode)
 	}
 }
 
 // ToggleIsCompleteHandler is handler to TOGGLE schedules's IsComplete by given
 // classcode and classno in PUT request
-func ToggleIsCompleteHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *http.Request) {
-	return getToggleFunc(s, h, "IsComplete")
+func ToggleIsCompleteHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return getToggleFunc(s, "IsComplete")
 }
 
 // ToggleIsNotifiedHandler is handler to TOGGLE schedules's IsNotified by given
 // classcode and classno in PUT request
-func ToggleIsNotifiedHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *http.Request) {
-	return getToggleFunc(s, h, "IsNotified")
+func ToggleIsNotifiedHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return getToggleFunc(s, "IsNotified")
 }
 
 // ToggleIsMeetingHandler is handler to TOGGLE schedules's IsMeeting by given
 // classcode and classno in PUT request
-func ToggleIsMeetingHandler(s ScheduleStore, h *ws.Hub) func(http.ResponseWriter, *http.Request) {
-	return getToggleFunc(s, h, "IsMeeting")
+func ToggleIsMeetingHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
+	return getToggleFunc(s, "IsMeeting")
 }

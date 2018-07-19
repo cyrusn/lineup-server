@@ -12,7 +12,6 @@ import (
 	"github.com/cyrusn/lineup-system/model/auth"
 	"github.com/cyrusn/lineup-system/model/schedule"
 	"github.com/cyrusn/lineup-system/route"
-	"github.com/cyrusn/lineup-system/ws"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -40,10 +39,8 @@ var serveCmd = &cobra.Command{
 		store := createStore(db, secret)
 
 		r := mux.NewRouter()
-		h := ws.NewHub()
-		go h.Run()
 
-		handleRoute(r, store, h)
+		handleRoute(r, store)
 		serveStaticFolder(r, staticFolderLocation)
 
 		location := "localhost" + port
@@ -61,8 +58,8 @@ func serveStaticFolder(r *mux.Router, staticFolderLocation string) {
 	)
 }
 
-func handleRoute(r *mux.Router, s *route.Store, h *ws.Hub) {
-	for _, ro := range route.Routes(s, h) {
+func handleRoute(r *mux.Router, s *route.Store) {
+	for _, ro := range route.Routes(s) {
 		handler := http.HandlerFunc(ro.Handler)
 
 		if ro.Auth {
