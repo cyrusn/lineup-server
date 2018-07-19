@@ -10,9 +10,9 @@ import (
 	auth_helper "github.com/cyrusn/goJWTAuthHelper"
 	"github.com/cyrusn/goTestHelper"
 
-	auth "github.com/cyrusn/lineup-system/auth"
+	"github.com/cyrusn/lineup-system/model/auth"
+	"github.com/cyrusn/lineup-system/model/schedule"
 	"github.com/cyrusn/lineup-system/route"
-	"github.com/cyrusn/lineup-system/schedule"
 
 	"github.com/gorilla/mux"
 )

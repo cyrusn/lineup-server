@@ -5,6 +5,7 @@ import (
 
 	auth "github.com/cyrusn/goJWTAuthHelper"
 	"github.com/cyrusn/lineup-system/route/handler"
+	"github.com/cyrusn/lineup-system/ws"
 )
 
 // Route store information of route
@@ -23,8 +24,14 @@ type Store struct {
 }
 
 // Routes is slice of route
-func Routes(s *Store) []Route {
+func Routes(s *Store, h *ws.Hub) []Route {
 	return []Route{
+		Route{
+			Path:    "/ws",
+			Methods: []string{"GET"},
+			Auth:    false,
+			Handler: h.ServeWS,
+		},
 		Route{
 			Path:    "/auth/login",
 			Methods: []string{"POST"},
@@ -32,6 +39,7 @@ func Routes(s *Store) []Route {
 			Handler: handler.LoginHandler(s.AuthStore, s.Secret),
 		},
 		Route{
+			// refresh jwt token
 			Path:    "/auth/refresh",
 			Methods: []string{"GET"},
 			Auth:    true,
@@ -47,37 +55,37 @@ func Routes(s *Store) []Route {
 			Path:    "/schedule/{classcode}/{classno}",
 			Methods: []string{"POST"},
 			Auth:    true,
-			Handler: handler.AddScheduleHandler(s.ScheduleStore),
+			Handler: handler.AddScheduleHandler(s.ScheduleStore, h),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}",
 			Methods: []string{"DELETE"},
 			Auth:    true,
-			Handler: handler.RemoveScheduleHandler(s.ScheduleStore),
+			Handler: handler.RemoveScheduleHandler(s.ScheduleStore, h),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/priority/{priority}",
 			Methods: []string{"PUT"},
 			Auth:    true,
-			Handler: handler.UpdatePriorityHandler(s.ScheduleStore),
+			Handler: handler.UpdatePriorityHandler(s.ScheduleStore, h),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-complete",
 			Methods: []string{"PUT"},
 			Auth:    true,
-			Handler: handler.ToggleIsCompleteHandler(s.ScheduleStore),
+			Handler: handler.ToggleIsCompleteHandler(s.ScheduleStore, h),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-notified",
 			Methods: []string{"PUT"},
 			Auth:    true,
-			Handler: handler.ToggleIsNotifiedHandler(s.ScheduleStore),
+			Handler: handler.ToggleIsNotifiedHandler(s.ScheduleStore, h),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-meeting",
 			Methods: []string{"PUT"},
 			Auth:    true,
-			Handler: handler.ToggleIsMeetingHandler(s.ScheduleStore),
+			Handler: handler.ToggleIsMeetingHandler(s.ScheduleStore, h),
 		},
 	}
 }

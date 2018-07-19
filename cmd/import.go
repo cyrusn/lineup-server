@@ -8,7 +8,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/cyrusn/lineup-system/auth"
+	"github.com/cyrusn/lineup-system/model/auth"
 	"github.com/spf13/cobra"
 )
 
@@ -16,9 +16,8 @@ var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "import user in database",
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-			log.Fatal(dbPath, " doesn't exist")
-		}
+		paths := []string{dbPath, userJSONPath}
+		checkPathExist(paths)
 
 		file, err := ioutil.ReadFile(userJSONPath)
 		if err != nil {
@@ -50,6 +49,6 @@ var importCmd = &cobra.Command{
 				os.Exit(1)
 			}
 		}
-		fmt.Println("users imported")
+		fmt.Println("users are imported")
 	},
 }

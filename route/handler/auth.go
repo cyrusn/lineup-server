@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -65,7 +64,6 @@ func LoginHandler(a AuthStore, s auth.Secret) func(http.ResponseWriter, *http.Re
 func RefreshHandler(a AuthStore, s auth.Secret) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := getTokenFromHeader(r, s)
-		fmt.Println(token)
 		authClaims := AuthClaims{}
 		newToken, err := s.UpdateToken(token, &authClaims)
 		if err != nil {
