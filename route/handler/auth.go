@@ -11,7 +11,13 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-var lifeTime int64 = 30
+// lifeTime is jwt life Time in minutes
+var lifeTime int64
+
+// UpdateLifeTime is used for update the lifeTime of jwt token
+func UpdateLifeTime(time int64) {
+	lifeTime = time
+}
 
 // AuthStore contains all method for handling authentication
 type AuthStore interface {

@@ -12,6 +12,7 @@ import (
 	"github.com/cyrusn/lineup-system/model/auth"
 	"github.com/cyrusn/lineup-system/model/schedule"
 	"github.com/cyrusn/lineup-system/route"
+	"github.com/cyrusn/lineup-system/route/handler"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
@@ -28,6 +29,8 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start Line-Up System Backend Server",
 	Run: func(cmd *cobra.Command, args []string) {
+		handler.UpdateLifeTime(lifeTime)
+
 		paths := []string{dbPath, staticFolderLocation}
 		checkPathExist(paths)
 
@@ -35,7 +38,10 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		secret := auth_helper.New(contextKeyName, jwtKeyName, roleKeyName, []byte(privateKey))
+
+		secret := auth_helper.New(
+			contextKeyName, jwtKeyName, roleKeyName, []byte(privateKey),
+		)
 		store := createStore(db, secret)
 
 		r := mux.NewRouter()

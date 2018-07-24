@@ -12,6 +12,7 @@ var (
 	isOverwrite          bool
 	staticFolderLocation string
 	userJSONPath         string
+	lifeTime             int64
 
 	rootCmd = &cobra.Command{
 		Use:   "lineup",
@@ -30,6 +31,7 @@ func init() {
 	serveCmd.PersistentFlags().StringVarP(&port, "port", "p", ":5000", "Port value")
 	serveCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
 	serveCmd.PersistentFlags().StringVarP(&staticFolderLocation, "static", "s", "./public", "Location of static folder for serving")
+	serveCmd.PersistentFlags().Int64VarP(&lifeTime, "time", "t", 30, "update the life time of jwt token")
 
 	createCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
 	createCmd.PersistentFlags().BoolVarP(&isOverwrite, "overwrite", "o", false, "Overwrite database if database location exist")

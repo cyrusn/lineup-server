@@ -26,8 +26,8 @@ type ScheduleStore interface {
 // GetSchedulesHandler is handler to get schedules by given classcode in get request
 func GetSchedulesHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		classCodes := readClassCodes(w, r)
-		schedules, err := s.SelectByClassCodes(classCodes)
+		classcodes := readQuery(r, "classcode")
+		schedules, err := s.SelectByClassCodes(classcodes)
 		errCode := http.StatusBadRequest
 
 		if err != nil {
