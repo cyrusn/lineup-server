@@ -6,6 +6,7 @@
 - [x] For the above issue, have to redesign the data structure.
 - [x] Add a simple login feature for teacher and student helper
 - [x] do not update the whole mapSchedule, should split it by form or even class
+- [ ] add an api '/scheudles?clazzes=["3a","3b","3c"]'
 - [ ] update only for change related.
 - [ ] use ab - Apache HTTP server benchmarking tool to test the benchmark in depoly state
 

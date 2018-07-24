@@ -9,9 +9,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func readClassCode(w http.ResponseWriter, r *http.Request) string {
-	classCode := mux.Vars(r)["classcode"]
-	return strings.ToUpper(classCode)
+func readClassCodes(w http.ResponseWriter, r *http.Request) []string {
+	classCodes := mux.Vars(r)["classcodes"]
+	return strings.Split(strings.ToUpper(classCodes), ",")
 }
 
 // readClassCodeAndClassNo read classcode and classno in mux.Vars

@@ -64,7 +64,7 @@ func TestMain(t *testing.T) {
 	t.Run("Toggle all 3B isMeeting", testToggleIsMeeting)
 	t.Run("delete all 3C schedule", testDelete)
 	t.Run("Toggle all 3D isComplete", testToggleIsComplete)
-	t.Run("query by class", testSelectByClassCode)
+	t.Run("query by class", testSelectByClassCodes)
 }
 
 var testInsertUser = func(t *testing.T) {
@@ -83,7 +83,7 @@ var testDuplicatedSchedule = func(t *testing.T) {
 	})
 }
 
-var testSelectByClassCode = func(t *testing.T) {
+var testSelectByClassCodes = func(t *testing.T) {
 	var classCodes = []string{"3A", "3B", "3C", "3D"}
 
 	for _, c := range classCodes {
@@ -137,7 +137,7 @@ var testToggleIsComplete = func(t *testing.T) {
 }
 
 func selectByClass(t *testing.T, classCode string) {
-	mySchedules, err := scheduleDB.SelectByClassCode(classCode)
+	mySchedules, err := scheduleDB.SelectByClassCodes(classCode)
 	assert.OK(t, err)
 
 	for _, s := range mySchedules {
