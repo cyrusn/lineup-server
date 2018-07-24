@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/cyrusn/goHTTPHelper"
 	"github.com/gorilla/mux"
@@ -10,7 +11,7 @@ import (
 
 func readClassCode(w http.ResponseWriter, r *http.Request) string {
 	classCode := mux.Vars(r)["classcode"]
-	return classCode
+	return strings.ToUpper(classCode)
 }
 
 // readClassCodeAndClassNo read classcode and classno in mux.Vars
@@ -24,7 +25,7 @@ func readClassCodeAndClassNo(w http.ResponseWriter, r *http.Request) (string, in
 		return "", 0, err
 	}
 
-	return classCode, classNo, nil
+	return strings.ToUpper(classCode), classNo, nil
 }
 
 func readRriority(r *http.Request) (int, error) {
