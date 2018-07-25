@@ -39,8 +39,8 @@ func Routes(s *Store) []Route {
 			Handler: handler.RefreshHandler(s.AuthStore, s.Secret),
 		},
 		Route{
-			// classcodes accept multiple classcodes, e.g. 3a,3b,3c
-			// but no space between classcodes
+			// use queries to get the informaton of classcode
+			// e.g. ?classcode=3A&classcode=3D
 			Path:    "/schedules",
 			Methods: []string{"GET"},
 			Auth:    true,

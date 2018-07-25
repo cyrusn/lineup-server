@@ -9,9 +9,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func readQuery(r *http.Request, query string) []string {
+func readQueries(r *http.Request, key string) []string {
 	q := r.URL.Query()
-	return q[query]
+	return q[key]
+}
+
+func readQuery(r *http.Request, key string) string {
+	q := r.URL.Query()
+	return q.Get(key)
 }
 
 // readClassCodeAndClassNo read classcode and classno in mux.Vars

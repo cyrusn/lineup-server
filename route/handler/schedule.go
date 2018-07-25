@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/cyrusn/goHTTPHelper"
 	"github.com/cyrusn/lineup-system/model/schedule"
@@ -16,7 +17,7 @@ type successMessage struct {
 type ScheduleStore interface {
 	Insert(string, int) error
 	Delete(string, int) error
-	SelectByClassCodes([]string) ([]*schedule.Schedule, error)
+	SelectedBy(string) ([]*schedule.Schedule, error)
 	UpdatePriority(string, int, int) error
 	ToggleIsNotified(string, int) error
 	ToggleIsMeeting(string, int) error
@@ -26,8 +27,19 @@ type ScheduleStore interface {
 // GetSchedulesHandler is handler to get schedules by given classcode in get request
 func GetSchedulesHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		classcodes := readQuery(r, "classcode")
-		schedules, err := s.SelectByClassCodes(classcodes)
+		classcodes := readQueries(r, "classcode")
+
+		classCodesString := strings.Join(classcodes, "\" or classcode = \"")
+		query := fmt.Sprintf(`SELECT * FROM SCHEDULE WHERE (classcode = "%s")`, classCodesString)
+
+		for _, key := range []string{"is_complete", "priority"} {
+			value := readQuery(r, key)
+			if value != "" {
+				query += fmt.Sprintf(` and %s%s`, key, value)
+			}
+		}
+
+		schedules, err := s.SelectedBy(query)
 		errCode := http.StatusBadRequest
 
 		if err != nil {
