@@ -28,7 +28,6 @@ type ScheduleStore interface {
 func GetSchedulesHandler(s ScheduleStore) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		classcodes := readQueries(r, "classcode")
-
 		classCodesString := strings.Join(classcodes, "\" or classcode = \"")
 		query := fmt.Sprintf(`SELECT * FROM SCHEDULE WHERE (classcode = "%s")`, classCodesString)
 
@@ -40,6 +39,11 @@ func GetSchedulesHandler(s ScheduleStore) func(http.ResponseWriter, *http.Reques
 		}
 
 		schedules, err := s.SelectedBy(query)
+		if schedules == nil {
+			helper.PrintJSON(w, []string{})
+			return
+		}
+
 		errCode := http.StatusBadRequest
 
 		if err != nil {
