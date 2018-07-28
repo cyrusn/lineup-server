@@ -14,7 +14,7 @@ import (
 
 var importCmd = &cobra.Command{
 	Use:   "import",
-	Short: "import user in database",
+	Short: "Import user in database",
 	Run: func(cmd *cobra.Command, args []string) {
 		paths := []string{dbPath, userJSONPath}
 		checkPathExist(paths)

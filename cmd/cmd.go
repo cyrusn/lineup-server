@@ -42,16 +42,65 @@ func init() {
 		rootCmd.AddCommand(cmd)
 	}
 
-	serveCmd.PersistentFlags().StringVarP(&port, "port", "p", ":5000", "Port value")
-	serveCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
-	serveCmd.PersistentFlags().StringVarP(&staticFolderLocation, "static", "s", "./public", "Location of static folder for serving")
-	serveCmd.PersistentFlags().Int64VarP(&lifeTime, "time", "t", 30, "update the life time of jwt token")
+	serveCmd.PersistentFlags().StringVarP(
+		&port,
+		"port",
+		"p",
+		":5000",
+		"port value",
+	)
+	serveCmd.PersistentFlags().StringVarP(
+		&dbPath,
+		"location",
+		"l",
+		"./test/test.db",
+		"location of sqlite3 database file",
+	)
+	serveCmd.PersistentFlags().StringVarP(
+		&staticFolderLocation,
+		"static",
+		"s",
+		"./public",
+		"location of static folder for serving",
+	)
+	serveCmd.PersistentFlags().Int64VarP(
+		&lifeTime,
+		"time",
+		"t",
+		30,
+		"update the life time (minutes) of jwt token",
+	)
+	createCmd.PersistentFlags().StringVarP(
+		&dbPath,
+		"location", "l",
+		"./test/test.db",
+		"location of sqlite3 database file",
+	)
+	createCmd.PersistentFlags().BoolVarP(
+		&isOverwrite,
+		"overwrite",
+		"o",
+		false,
+		"overwrite database if database location exist",
+	)
 
-	createCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
-	createCmd.PersistentFlags().BoolVarP(&isOverwrite, "overwrite", "o", false, "Overwrite database if database location exist")
-
-	importCmd.PersistentFlags().StringVarP(&userJSONPath, "import", "i", "./test/user.json", "path to user.json file")
-	importCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
+	importCmd.PersistentFlags().StringVarP(
+		&userJSONPath,
+		"import",
+		"i",
+		"./test/user.json",
+		`path of user.json file
+The schema of the json file should be as follow.
+[{"userAlias": "user1", "password": "password1", "role": "teacher"}, ... ]
+`,
+	)
+	importCmd.PersistentFlags().StringVarP(
+		&dbPath,
+		"location",
+		"l",
+		"./test/test.db",
+		"location of sqlite3 database file",
+	)
 
 }
 
