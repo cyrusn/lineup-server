@@ -58,6 +58,10 @@ func handleRoute(r *mux.Router, s *route.Store) {
 	for _, ro := range route.Routes(s) {
 		handler := http.HandlerFunc(ro.Handler)
 
+		if len(ro.Scopes) != 0 {
+			handler = secret.Access(ro.Scopes, handler).(http.HandlerFunc)
+		}
+
 		if ro.Auth {
 			handler = secret.Authenticate(handler).(http.HandlerFunc)
 		}

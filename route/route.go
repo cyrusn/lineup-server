@@ -10,6 +10,7 @@ import (
 type Route struct {
 	Path    string
 	Methods []string
+	Scopes  []string
 	Auth    bool
 	Handler func(http.ResponseWriter, *http.Request)
 }
@@ -26,6 +27,7 @@ func Routes(s *Store) []Route {
 		Route{
 			Path:    "/auth/login",
 			Methods: []string{"POST"},
+			Scopes:  []string{},
 			Auth:    false,
 			Handler: handler.LoginHandler(s.AuthStore),
 		},
@@ -33,6 +35,7 @@ func Routes(s *Store) []Route {
 			// refresh jwt token, where key is the jwt key name in header
 			Path:    "/auth/refresh/{key}",
 			Methods: []string{"GET"},
+			Scopes:  []string{},
 			Auth:    true,
 			Handler: handler.RefreshHandler(s.AuthStore),
 		},
@@ -41,42 +44,49 @@ func Routes(s *Store) []Route {
 			// e.g. ?classcode=3A&classcode=3D
 			Path:    "/schedules",
 			Methods: []string{"GET"},
+			Scopes:  []string{},
 			Auth:    true,
 			Handler: handler.GetSchedulesHandler(s.ScheduleStore),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}",
 			Methods: []string{"POST"},
+			Scopes:  []string{},
 			Auth:    true,
 			Handler: handler.AddScheduleHandler(s.ScheduleStore),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}",
 			Methods: []string{"DELETE"},
+			Scopes:  []string{},
 			Auth:    true,
 			Handler: handler.RemoveScheduleHandler(s.ScheduleStore),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/priority/{priority}",
 			Methods: []string{"PUT"},
+			Scopes:  []string{"teacher"},
 			Auth:    true,
 			Handler: handler.UpdatePriorityHandler(s.ScheduleStore),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-complete",
 			Methods: []string{"PUT"},
+			Scopes:  []string{"teacher"},
 			Auth:    true,
 			Handler: handler.ToggleIsCompleteHandler(s.ScheduleStore),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-notified",
 			Methods: []string{"PUT"},
+			Scopes:  []string{},
 			Auth:    true,
 			Handler: handler.ToggleIsNotifiedHandler(s.ScheduleStore),
 		},
 		Route{
 			Path:    "/schedule/{classcode}/{classno}/is-meeting",
 			Methods: []string{"PUT"},
+			Scopes:  []string{"teacher"},
 			Auth:    true,
 			Handler: handler.ToggleIsMeetingHandler(s.ScheduleStore),
 		},
