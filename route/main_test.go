@@ -1,14 +1,17 @@
 package route_test
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	auth_helper "github.com/cyrusn/goJWTAuthHelper"
 	"github.com/cyrusn/goTestHelper"
+	jwt "github.com/dgrijalva/jwt-go"
+
+	auth_helper "github.com/cyrusn/goJWTAuthHelper"
 
 	"github.com/cyrusn/lineup-system/model/auth"
 	"github.com/cyrusn/lineup-system/model/schedule"
@@ -18,14 +21,35 @@ import (
 )
 
 var r = mux.NewRouter()
+var secret auth_helper.Secret
 
 type mockAuthDB struct {
 	credentials []*auth.Credential
 }
 
-func (db *mockAuthDB) Authenticate(username, password string) error {
-	return nil
+type myClaims struct {
+	jwt.StandardClaims
 }
+
+func (db *mockAuthDB) Authenticate(username, password string) (string, error) {
+	if username == "user1" && password == "password1" {
+		return secret.GenerateToken(myClaims{
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: time.Now().Add(time.Minute * time.Duration(30)).Unix(),
+			},
+		})
+	}
+	return "", errors.New("invalid login")
+}
+
+func (db *mockAuthDB) Refresh(jwtToken string) (string, error) {
+	return secret.GenerateToken(myClaims{
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Minute * time.Duration(30)).Unix(),
+		},
+	})
+}
+
 func (db *mockAuthDB) Validate(token string) error {
 	return nil
 }
@@ -54,12 +78,14 @@ func (db *mockScheduleDB) Delete(classCode string, classNo int) error {
 	return nil
 }
 
-func (db *mockScheduleDB) SelectByClassCode(classCode string) ([]*schedule.Schedule, error) {
+func (db *mockScheduleDB) SelectedBy(q *schedule.Query) ([]*schedule.Schedule, error) {
 	var result []*schedule.Schedule
 
 	for _, s := range db.schedules {
-		if s.ClassCode == classCode {
-			result = append(result, s)
+		for _, classcode := range q.Classcodes {
+			if s.ClassCode == classcode {
+				result = append(result, s)
+			}
 		}
 	}
 	return result, nil
@@ -104,8 +130,8 @@ func (db *mockScheduleDB) ToggleIsComplete(classCode string, classNo int) error 
 var db = route.Store{
 	&mockAuthDB{
 		[]*auth.Credential{
-			&auth.Credential{"user1", "password1"},
-			&auth.Credential{"user2", "password2"},
+			&auth.Credential{"user1", "password1", "teacher"},
+			&auth.Credential{"user2", "password2", "student"},
 		},
 	},
 	&mockScheduleDB{
@@ -123,15 +149,15 @@ var db = route.Store{
 			&schedule.Schedule{"3D", 2, time.Now(), 0, false, false, false},
 		},
 	},
-	auth_helper.New("myClaim", "kid", "myRole", []byte("secret")),
 }
 
 func init() {
+	secret = auth_helper.New("myClaim", "kid", "myRole", []byte("secret"))
 	for _, route := range route.Routes(&db) {
 		handler := http.HandlerFunc(route.Handler)
 
 		if route.Auth {
-			handler = db.Secret.Authenticate(handler).(http.HandlerFunc)
+			handler = secret.Authenticate(handler).(http.HandlerFunc)
 		}
 
 		r.Handle(route.Path, handler).Methods(route.Methods...)

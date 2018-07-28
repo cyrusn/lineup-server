@@ -137,8 +137,8 @@ var testToggleIsComplete = func(t *testing.T) {
 }
 
 func selectByClass(t *testing.T, classCode string) {
-	query := fmt.Sprintf(`SELECT * FROM SCHEDULE WHERE (classcode = "%s")`, classCode)
-	mySchedules, err := scheduleDB.SelectedBy(query)
+	query := schedule.Query{[]string{classCode}, "", ""}
+	mySchedules, err := scheduleDB.SelectedBy(&query)
 	assert.OK(t, err)
 
 	for _, s := range mySchedules {

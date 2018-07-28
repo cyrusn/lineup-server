@@ -4,6 +4,7 @@ package schedule
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -23,9 +24,27 @@ type DB struct {
 	*sql.DB
 }
 
-// SelectedBy find all schedules by classcode
-func (db *DB) SelectedBy(query string) ([]*Schedule, error) {
+// Query store information for classcode
+type Query struct {
+	Classcodes []string
+	IsComplete string
+	Priority   string
+}
+
+// SelectedBy find all schedules by query
+func (db *DB) SelectedBy(q *Query) ([]*Schedule, error) {
 	var schedules []*Schedule
+
+	classcodes := strings.Join(q.Classcodes, "\" or classcode = \"")
+	query := fmt.Sprintf(`SELECT * FROM SCHEDULE WHERE (classcode = "%s")`, classcodes)
+
+	if q.IsComplete != "" {
+		query += fmt.Sprintf(` and is_complete%s`, q.IsComplete)
+	}
+
+	if q.Priority != "" {
+		query += fmt.Sprintf(` and priority%s`, q.Priority)
+	}
 
 	rows, err := db.Query(query)
 	if err != nil {
