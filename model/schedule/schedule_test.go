@@ -9,13 +9,13 @@ import (
 
 	"github.com/cyrusn/goTestHelper"
 	"github.com/cyrusn/lineup-system/database"
-	"github.com/cyrusn/lineup-system/schedule"
+	"github.com/cyrusn/lineup-system/model/schedule"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	dbPath = "../test/test.db"
+	dbPath = "../../test/test.db"
 )
 
 type mySchedule struct {
@@ -137,7 +137,8 @@ var testToggleIsComplete = func(t *testing.T) {
 }
 
 func selectByClass(t *testing.T, classCode string) {
-	mySchedules, err := scheduleDB.SelectByClassCodes(classCode)
+	query := fmt.Sprintf(`SELECT * FROM SCHEDULE WHERE (classcode = "%s")`, classCode)
+	mySchedules, err := scheduleDB.SelectedBy(query)
 	assert.OK(t, err)
 
 	for _, s := range mySchedules {
