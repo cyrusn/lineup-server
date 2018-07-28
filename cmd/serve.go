@@ -7,29 +7,23 @@ import (
 	"net/http"
 
 	helper "github.com/cyrusn/goHTTPHelper"
+
 	auth_helper "github.com/cyrusn/goJWTAuthHelper"
 
 	"github.com/cyrusn/lineup-system/model/auth"
 	"github.com/cyrusn/lineup-system/model/schedule"
 	"github.com/cyrusn/lineup-system/route"
-	"github.com/cyrusn/lineup-system/route/handler"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-)
-
-const (
-	contextKeyName = "authClaim"
-	jwtKeyName     = "jwt"
-	roleKeyName    = "Role"
-	privateKey     = "skill-vein-planet-neigh-envoi"
 )
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start Line-Up System Backend Server",
 	Run: func(cmd *cobra.Command, args []string) {
-		handler.UpdateLifeTime(lifeTime)
+
+		auth.UpdateLifeTime(lifeTime)
 
 		paths := []string{dbPath, staticFolderLocation}
 		checkPathExist(paths)
@@ -39,11 +33,7 @@ var serveCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		secret := auth_helper.New(
-			contextKeyName, jwtKeyName, roleKeyName, []byte(privateKey),
-		)
-		store := createStore(db, secret)
-
+		store := createStore(db, &secret)
 		r := mux.NewRouter()
 
 		handleRoute(r, store)
@@ -69,7 +59,7 @@ func handleRoute(r *mux.Router, s *route.Store) {
 		handler := http.HandlerFunc(ro.Handler)
 
 		if ro.Auth {
-			handler = s.Secret.Authenticate(handler).(http.HandlerFunc)
+			handler = secret.Authenticate(handler).(http.HandlerFunc)
 		}
 
 		r.
@@ -80,11 +70,10 @@ func handleRoute(r *mux.Router, s *route.Store) {
 	}
 }
 
-func createStore(db *sql.DB, secret auth_helper.Secret) *route.Store {
+func createStore(db *sql.DB, secret *auth_helper.Secret) *route.Store {
 	return &route.Store{
-		&auth.DB{db},
+		&auth.DB{db, secret},
 		&schedule.DB{db},
-		secret,
 	}
 }
 

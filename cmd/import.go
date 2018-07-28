@@ -40,10 +40,10 @@ var importCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		db := &auth.DB{sqldb}
+		db := &auth.DB{sqldb, &secret}
 
 		for _, c := range credentials {
-			err := db.Insert(c.UserAlias, c.Password)
+			err := db.Insert(c.UserAlias, c.Password, c.Role)
 			if err != nil {
 				fmt.Printf("Import error: %v\n", err)
 				os.Exit(1)

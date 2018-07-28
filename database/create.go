@@ -21,7 +21,8 @@ const (
 	authSchema = `
 	  CREATE TABLE IF NOT EXISTS AUTHENTICATION (
 	    useralias TEXT PRIMARY KEY,
-	    password BLOB NOT NULL
+	    password BLOB NOT NULL,
+	    role TEXT
 	  );`
 )
 

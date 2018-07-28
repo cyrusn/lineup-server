@@ -3,7 +3,6 @@ package route
 import (
 	"net/http"
 
-	auth "github.com/cyrusn/goJWTAuthHelper"
 	"github.com/cyrusn/lineup-system/route/handler"
 )
 
@@ -19,7 +18,6 @@ type Route struct {
 type Store struct {
 	handler.AuthStore
 	handler.ScheduleStore
-	auth.Secret
 }
 
 // Routes is slice of route
@@ -29,14 +27,14 @@ func Routes(s *Store) []Route {
 			Path:    "/auth/login",
 			Methods: []string{"POST"},
 			Auth:    false,
-			Handler: handler.LoginHandler(s.AuthStore, s.Secret),
+			Handler: handler.LoginHandler(s.AuthStore),
 		},
 		Route{
-			// refresh jwt token
-			Path:    "/auth/refresh",
+			// refresh jwt token, where key is the jwt key name in header
+			Path:    "/auth/refresh/{key}",
 			Methods: []string{"GET"},
 			Auth:    true,
-			Handler: handler.RefreshHandler(s.AuthStore, s.Secret),
+			Handler: handler.RefreshHandler(s.AuthStore),
 		},
 		Route{
 			// use queries to get the informaton of classcode

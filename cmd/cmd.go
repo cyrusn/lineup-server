@@ -3,7 +3,16 @@ package cmd
 import (
 	"log"
 
+	auth_helper "github.com/cyrusn/goJWTAuthHelper"
+
 	"github.com/spf13/cobra"
+)
+
+const (
+	contextKeyName = "authClaim"
+	jwtKeyName     = "jwt"
+	roleKeyName    = "Role"
+	privateKey     = "skill-vein-planet-neigh-envoi"
 )
 
 var (
@@ -13,6 +22,7 @@ var (
 	staticFolderLocation string
 	userJSONPath         string
 	lifeTime             int64
+	secret               auth_helper.Secret
 
 	rootCmd = &cobra.Command{
 		Use:   "lineup",
@@ -22,6 +32,10 @@ var (
 )
 
 func init() {
+	secret = auth_helper.New(
+		contextKeyName, jwtKeyName, roleKeyName, []byte(privateKey),
+	)
+
 	cmds := []*cobra.Command{versionCmd, serveCmd, createCmd, importCmd}
 
 	for _, cmd := range cmds {
@@ -38,6 +52,7 @@ func init() {
 
 	importCmd.PersistentFlags().StringVarP(&userJSONPath, "import", "i", "./test/user.json", "path to user.json file")
 	importCmd.PersistentFlags().StringVarP(&dbPath, "location", "l", "./test/test.db", "Location of sqlite3 database file")
+
 }
 
 // Execute run all cmds
