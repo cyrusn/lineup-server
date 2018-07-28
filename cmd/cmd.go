@@ -12,7 +12,6 @@ const (
 	contextKeyName = "authClaim"
 	jwtKeyName     = "jwt"
 	roleKeyName    = "Role"
-	privateKey     = "skill-vein-planet-neigh-envoi"
 )
 
 var (
@@ -22,6 +21,7 @@ var (
 	staticFolderLocation string
 	userJSONPath         string
 	lifeTime             int64
+	privateKey           string
 	secret               auth_helper.Secret
 
 	rootCmd = &cobra.Command{
@@ -32,9 +32,11 @@ var (
 )
 
 func init() {
-	secret = auth_helper.New(
-		contextKeyName, jwtKeyName, roleKeyName, []byte(privateKey),
-	)
+	cobra.OnInitialize(func() {
+		secret = auth_helper.New(
+			contextKeyName, jwtKeyName, roleKeyName, []byte(privateKey),
+		)
+	})
 
 	cmds := []*cobra.Command{versionCmd, serveCmd, createCmd, importCmd}
 
@@ -42,19 +44,26 @@ func init() {
 		rootCmd.AddCommand(cmd)
 	}
 
+	rootCmd.PersistentFlags().StringVarP(
+		&privateKey,
+		"key",
+		"k",
+		"skill-vein-planet-neigh-envoi",
+		"change the private key for authentication on jwt",
+	)
+	rootCmd.PersistentFlags().StringVarP(
+		&dbPath,
+		"location",
+		"l",
+		"./test/test.db",
+		"location of sqlite3 database file",
+	)
 	serveCmd.PersistentFlags().StringVarP(
 		&port,
 		"port",
 		"p",
 		":5000",
 		"port value",
-	)
-	serveCmd.PersistentFlags().StringVarP(
-		&dbPath,
-		"location",
-		"l",
-		"./test/test.db",
-		"location of sqlite3 database file",
 	)
 	serveCmd.PersistentFlags().StringVarP(
 		&staticFolderLocation,
@@ -68,13 +77,7 @@ func init() {
 		"time",
 		"t",
 		30,
-		"update the life time (minutes) of jwt token",
-	)
-	createCmd.PersistentFlags().StringVarP(
-		&dbPath,
-		"location", "l",
-		"./test/test.db",
-		"location of sqlite3 database file",
+		"update the life time (minutes) of jwt",
 	)
 	createCmd.PersistentFlags().BoolVarP(
 		&isOverwrite,
@@ -83,7 +86,6 @@ func init() {
 		false,
 		"overwrite database if database location exist",
 	)
-
 	importCmd.PersistentFlags().StringVarP(
 		&userJSONPath,
 		"import",
@@ -94,14 +96,6 @@ The schema of the json file should be as follow.
 [{"userAlias": "user1", "password": "password1", "role": "teacher"}, ... ]
 `,
 	)
-	importCmd.PersistentFlags().StringVarP(
-		&dbPath,
-		"location",
-		"l",
-		"./test/test.db",
-		"location of sqlite3 database file",
-	)
-
 }
 
 // Execute run all cmds
