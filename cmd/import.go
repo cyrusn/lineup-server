@@ -17,8 +17,7 @@ var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "Import user in database",
 	Run: func(cmd *cobra.Command, args []string) {
-		paths := []string{dbPath, userJSONPath}
-		checkPathExist(paths)
+		checkPathExist(userJSONPath)
 
 		file, err := ioutil.ReadFile(userJSONPath)
 		if err != nil {
@@ -35,7 +34,7 @@ var importCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		sqldb, err := sql.Open("sqlite3", dbPath)
+		sqldb, err := sql.Open("mysql", dsn)
 
 		if err != nil {
 			log.Fatal(err)
@@ -61,7 +60,7 @@ func init() {
 		&userJSONPath,
 		"import",
 		"i",
-		"./data/user.json",
+		DEFAULT_IMPORT_PATH,
 		`path of user.json file
 The schema of the json file should be as follow.
 [{"userAlias": "user1", "password": "password1", "role": "teacher"}, ... ]

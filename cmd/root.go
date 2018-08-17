@@ -18,7 +18,7 @@ func init() {
 		&cfgFile,
 		"config",
 		"c",
-		"./config.yaml",
+		DEFAULT_CONFIG_PATH,
 		"config file",
 	)
 	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
@@ -27,17 +27,17 @@ func init() {
 		&privateKey,
 		"key",
 		"k",
-		"skill-vein-planet-neigh-envoi",
+		DEFAULT_PRIVATE_KEY,
 		"change the private key for authentication on jwt",
 	)
 	viper.BindPFlag("key", rootCmd.PersistentFlags().Lookup("key"))
 
 	rootCmd.PersistentFlags().StringVarP(
-		&dbPath,
-		"location",
-		"l",
-		"./test/test.db",
-		"location of sqlite3 database file",
+		&dsn,
+		"dsn",
+		"d",
+		DEFAULT_DSN,
+		"Data source name of mysql. [ref https://github.com/go-sql-driver/mysql]",
 	)
 	viper.BindPFlag("location", rootCmd.PersistentFlags().Lookup("location"))
 

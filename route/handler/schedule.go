@@ -35,11 +35,6 @@ func GetSchedulesHandler(s ScheduleStore) func(http.ResponseWriter, *http.Reques
 		}
 
 		schedules, err := s.SelectedBy(&query)
-		if schedules == nil {
-			helper.PrintJSON(w, []string{})
-			return
-		}
-
 		errCode := http.StatusBadRequest
 
 		if err != nil {

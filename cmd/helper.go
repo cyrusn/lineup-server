@@ -5,10 +5,8 @@ import (
 	"os"
 )
 
-func checkPathExist(paths []string) {
-	for _, path := range paths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			log.Fatalf(`"%s" doesn't exist`, path)
-		}
+func checkPathExist(path string) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Fatalf(`"%s" doesn't exist`, path)
 	}
 }

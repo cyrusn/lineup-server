@@ -26,10 +26,9 @@ var serveCmd = &cobra.Command{
 
 		auth.UpdateLifeTime(lifeTime)
 
-		paths := []string{dbPath, staticFolderLocation}
-		checkPathExist(paths)
+		checkPathExist(staticFolderLocation)
 
-		db, err := sql.Open("sqlite3", dbPath)
+		db, err := sql.Open("mysql", dsn)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -41,7 +40,7 @@ var serveCmd = &cobra.Command{
 		serveStaticFolder(r, staticFolderLocation)
 
 		location := "localhost" + port
-		printNotice(dbPath, staticFolderLocation, location)
+		printNotice(dsn, staticFolderLocation, location)
 		http.ListenAndServe(location, helper.Logger(r))
 	},
 }
@@ -53,7 +52,7 @@ func init() {
 		&port,
 		"port",
 		"p",
-		":5000",
+		DEFAULT_PORT,
 		"port value",
 	)
 	viper.BindPFlag("port", serveCmd.PersistentFlags().Lookup("port"))
@@ -62,7 +61,7 @@ func init() {
 		&staticFolderLocation,
 		"static",
 		"s",
-		"./public",
+		DEFAULT_PUBLIC_FOLDER,
 		"location of static folder for serving",
 	)
 	viper.BindPFlag("static", serveCmd.PersistentFlags().Lookup("static"))
@@ -112,10 +111,9 @@ func createStore(db *sql.DB, secret *auth_helper.Secret) *route.Store {
 	}
 }
 
-func printNotice(dbPath, staticFolderLocation, location string) {
+func printNotice(dsn, staticFolderLocation, location string) {
 	fmt.Printf(
-		"Database: \"%s\"\nStatic folder: \"%s\"\nServer start on http://%s\n",
-		dbPath,
+		"Static folder: \"%s\"\nServer start on http://%s\n",
 		staticFolderLocation,
 		location,
 	)

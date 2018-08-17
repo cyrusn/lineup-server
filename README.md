@@ -1,5 +1,8 @@
 # A simple line up server for parents day
 
+## Build
+`GOOS=linux GOARCH=amd64 go build -o ./lineup main.go`
+
 ## setup
 - create a config file `./config.yaml`, please see below for the default key and value.
 
@@ -7,7 +10,7 @@
 # root command
 config: "./config.yaml"
 key: "skill-vein-planet-neigh-envoi"
-location: "./test/test.db"
+dsn: "root@/lineupTestDB"
 
 # server command
 port: ":5000"

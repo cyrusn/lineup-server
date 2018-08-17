@@ -13,7 +13,7 @@ var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create database for Line-Up System Backend Server",
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := model.CreateDBFile(dbPath, isOverwrite); err != nil {
+		if err := model.CreateDatabase(dsn, isOverwrite); err != nil {
 			fmt.Println(err)
 			fmt.Println("Please use \"-o\" flag to overwrite existing database")
 			os.Exit(1)
@@ -29,7 +29,7 @@ func init() {
 		&isOverwrite,
 		"overwrite",
 		"o",
-		false,
+		DEFAULT_OVERWRITE,
 		"overwrite database if database location exist",
 	)
 

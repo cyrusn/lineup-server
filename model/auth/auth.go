@@ -56,7 +56,7 @@ func (db *DB) Insert(userAlias, password, role string) error {
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec(`INSERT INTO AUTHENTICATION (
+	_, err = db.Exec(`INSERT INTO Credential (
       useralias,
       password,
       role
@@ -79,7 +79,7 @@ func (db *DB) Authenticate(userAlias, password string) (string, error) {
 	c := new(credential)
 
 	err := db.QueryRow(
-		`SELECT * FROM AUTHENTICATION WHERE useralias=?`,
+		`SELECT * FROM Credential WHERE useralias=?`,
 		userAlias,
 	).Scan(&c.userAlias, &c.password, &c.role)
 

@@ -36,7 +36,7 @@ func (db *DB) SelectedBy(q *Query) ([]*Schedule, error) {
 	var schedules []*Schedule
 
 	classcodes := strings.Join(q.Classcodes, "\" or classcode = \"")
-	query := fmt.Sprintf(`SELECT * FROM SCHEDULE WHERE (classcode = "%s")`, classcodes)
+	query := fmt.Sprintf(`SELECT * FROM Schedule WHERE (classcode = "%s")`, classcodes)
 
 	if q.IsComplete != "" {
 		query += fmt.Sprintf(` and is_complete%s`, q.IsComplete)
@@ -73,7 +73,7 @@ func (db *DB) SelectedBy(q *Query) ([]*Schedule, error) {
 
 // Insert Schedule by given classCode and classNo
 func (db *DB) Insert(classCode string, classNo int) error {
-	_, err := db.Exec(`INSERT INTO SCHEDULE (
+	_, err := db.Exec(`INSERT INTO Schedule (
       classcode,
       classno,
       arrived_at,
@@ -91,7 +91,7 @@ func (db *DB) Insert(classCode string, classNo int) error {
 // Delete delete schedule
 func (db *DB) Delete(classcode string, classno int) error {
 	_, err := db.Exec(
-		`DELETE FROM SCHEDULE WHERE (
+		`DELETE FROM Schedule WHERE (
       classcode = ? and classno = ?
     )`,
 		classcode, classno,
@@ -102,7 +102,7 @@ func (db *DB) Delete(classcode string, classno int) error {
 
 // UpdatePriority update schedule's priority
 func (db *DB) UpdatePriority(classcode string, classno int, priority int) error {
-	_, err := db.Exec(`UPDATE SCHEDULE SET priority = ? WHERE (
+	_, err := db.Exec(`UPDATE Schedule SET priority = ? WHERE (
       classcode = ? and classno = ?
     )`,
 		priority, classcode, classno,
@@ -115,7 +115,7 @@ func (db *DB) toggleFactory(key string) func(string, int) error {
 	return func(classCode string, classNo int) error {
 
 		exec := fmt.Sprintf(`
-    UPDATE SCHEDULE SET %s = NOT %s WHERE (
+    UPDATE Schedule SET %s = NOT %s WHERE (
       classcode = ? and classno = ?
     )`, key, key)
 

@@ -1,7 +1,7 @@
 # root command
 config: "./config.yaml"
 key: "skill-vein-planet-neigh-envoi"
-location: "./test/test.db"
+dsn: "root@/lineupTestDB"
 
 # server command
 port: ":5000"
