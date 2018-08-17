@@ -70,7 +70,7 @@ func init() {
 		&lifeTime,
 		"time",
 		"t",
-		300,
+		DEFAULT_JWT_EXPIRE_TIME,
 		"update the life time (minutes) of jwt",
 	)
 }

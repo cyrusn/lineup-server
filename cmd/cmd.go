@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	DEFAULT_CONFIG_PATH   = "./config.yaml"
-	DEFAULT_DSN           = "root@/lineupTestDB"
-	DEFAULT_PRIVATE_KEY   = "skill-vein-planet-neigh-envoi"
-	DEFAULT_OVERWRITE     = false
-	DEFAULT_IMPORT_PATH   = "./data/user.json"
-	DEFAULT_PUBLIC_FOLDER = "./public"
-	DEFAULT_PORT          = ":5000"
+	DEFAULT_CONFIG_PATH     = "./config.yaml"
+	DEFAULT_DSN             = "root@/lineupTestDB"
+	DEFAULT_PRIVATE_KEY     = "skill-vein-planet-neigh-envoi"
+	DEFAULT_OVERWRITE       = false
+	DEFAULT_IMPORT_PATH     = "./data/user.json"
+	DEFAULT_PUBLIC_FOLDER   = "./public"
+	DEFAULT_PORT            = ":5000"
+	DEFAULT_JWT_EXPIRE_TIME = 300
 
 	CONTEXT_KEY_NAME = "authClaim"
 	JWT_KEY_NAME     = "jwt"
@@ -47,23 +48,31 @@ func initConfig() {
 	}
 }
 
-func initSecret() {
-	secret = auth_helper.New(
-		CONTEXT_KEY_NAME, JWT_KEY_NAME, ROLE_KEY_NAME, []byte(privateKey),
-	)
+func initDefault() {
+	viper.SetDefault("config", DEFAULT_CONFIG_PATH)
+	viper.SetDefault("port", DEFAULT_PORT)
+	viper.SetDefault("overwrite", DEFAULT_OVERWRITE)
+	viper.SetDefault("static", DEFAULT_PUBLIC_FOLDER)
+	viper.SetDefault("import", DEFAULT_IMPORT_PATH)
+	viper.SetDefault("time", DEFAULT_JWT_EXPIRE_TIME)
+	viper.SetDefault("key", DEFAULT_PRIVATE_KEY)
 }
 
 func initVar() {
 	cfgFile = viper.GetString("config")
 	port = viper.GetString("port")
-
 	dsn = setDSNTimeZone(viper.GetString("dsn"))
-
 	isOverwrite = viper.GetBool("overwrite")
 	staticFolderLocation = viper.GetString("static")
 	userJSONPath = viper.GetString("import")
 	lifeTime = viper.GetInt64("time")
 	privateKey = viper.GetString("key")
+}
+
+func initSecret() {
+	secret = auth_helper.New(
+		CONTEXT_KEY_NAME, JWT_KEY_NAME, ROLE_KEY_NAME, []byte(privateKey),
+	)
 }
 
 func setDSNTimeZone(dsn string) string {
@@ -84,7 +93,7 @@ func setDSNTimeZone(dsn string) string {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig, initVar, initSecret)
+	cobra.OnInitialize(initConfig, initDefault, initVar, initSecret)
 }
 
 // Execute run all cmds
