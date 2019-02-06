@@ -6,6 +6,7 @@ dsn: "root@/lineupTestDB"
 # server command
 port: ":5000"
 static: "./public"
+# jwt token expire time in minutes
 time: 300
 
 # import command
